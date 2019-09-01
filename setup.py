@@ -15,6 +15,9 @@ setup(name='steel_defect_detection',
             "future",
             "pandas",
             "albumentations",
+            "pytorch_lightning>=0.4.8",
+            "torch>=1.2.0",
+            "torchvision>=0.4.0",
       ],
       classifiers=[
           'Development Status :: 3 - Alpha',
@@ -22,12 +25,9 @@ setup(name='steel_defect_detection',
           'Intended Audience :: Developers',  # Define that your audience are developers
           'Topic :: Software Development :: Build Tools',
           'License :: OSI Approved :: MIT License',  # Again, pick a license
-          'Programming Language :: Python :: 3',  # Specify which python versions that you want to support
-          'Programming Language :: Python :: 3.4',
-          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 2.7',
       ],
+      python_requires='>=3.6',
       keywords=['deep learning', 'image segmentation', 'image classification', 'medical image analysis',
                   'medical image segmentation', 'data augmentation'],
       )
