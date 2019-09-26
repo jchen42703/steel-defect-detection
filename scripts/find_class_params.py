@@ -10,12 +10,12 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from catalyst.dl.runner import SupervisedRunner
 
-from clouds.io.dataset import CloudDataset
-from clouds.io.utils import post_process, sigmoid
-from clouds.metrics import dice
+from steel.io.dataset import CloudDataset
+from steel.io.utils import post_process, sigmoid
+from steel.metrics import dice
 from utils import get_preprocessing, get_validation_augmentation, setup_train_and_sub_df
 
-def main(path="../input/understanding_cloud_organization", bs=5, encoder="resnet50",
+def main(path="../input/severstal-steel-defect-detection", bs=5, encoder="resnet50",
          test_size=0.1, use_resized_dataset=False, split_seed=42, attention_type="scse"):
     """
     Runs `predict_validation` and `get_class_params` and saves the output `class_params`

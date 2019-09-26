@@ -14,10 +14,10 @@ from torch.utils.data import DataLoader
 from catalyst.dl.callbacks import InferCallback, CheckpointCallback
 from catalyst.dl.runner import SupervisedRunner
 
-from clouds.io.dataset import CloudDataset
-from clouds.io.utils import post_process, mask2rle, sigmoid
+from steel.io.dataset import CloudDataset
+from steel.io.utils import post_process, mask2rle, sigmoid
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
-from clouds.inference.inference import get_encoded_pixels
+from steel.inference.inference import get_encoded_pixels
 
 def main(path, bs=8, encoder="resnet34", attention_type="scse"):
     """
