@@ -12,8 +12,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
 
 from steel.io.dataset import SteelDataset
-from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df
-from steel.utils.train_utils import seed_everything
+from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df, seed_everything
 
 def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="resnet50",
          test_size=0.1, use_resized_dataset=False, split_seed=42, attention_type="scse"):
