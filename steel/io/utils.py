@@ -1,6 +1,8 @@
 # utility functions
 import numpy as np
 import cv2
+import pandas as pd
+import os
 
 def run_length_decode(rle, height=256, width=1600, fill_value=1):
     mask = np.zeros((height,width), np.float32)
@@ -59,6 +61,12 @@ def make_mask_no_rle(df: pd.DataFrame, image_name: str="img.jpg",
             masks[:, :, classidx] = mask
     masks = masks/255
     return masks
+
+def to_tensor(x, **kwargs):
+    """
+    Convert image or mask.
+    """
+    return x.transpose(2, 0, 1).astype('float32')
 
 def mask2rle(img):
     '''

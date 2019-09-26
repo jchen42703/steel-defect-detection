@@ -7,7 +7,7 @@ import os
 import cv2
 
 from torch.utils.data import Dataset
-from .utils import make_mask, make_mask_resized_dset
+from .utils import make_mask, make_mask_no_rle
 
 class SteelDataset(Dataset):
     def __init__(self, path: str, df: pd.DataFrame=None, datatype: str="train", im_ids: np.array=None,
@@ -29,7 +29,7 @@ class SteelDataset(Dataset):
         if not self.use_resized_dataset:
             mask = make_mask(self.df, image_name)
         else:
-            mask = make_mask_resized_dset(self.df, image_name, self.masks_folder)
+            mask = make_mask_no_rle(self.df, image_name, self.masks_folder)
         # loading image
         image_path = os.path.join(self.data_folder, image_name)
         img = cv2.imread(image_path)

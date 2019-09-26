@@ -5,7 +5,7 @@ import random
 import numpy as np
 import torch
 
-from clouds.io.utils import to_tensor
+from steel.io.utils import to_tensor
 
 def setup_train_and_sub_df(path):
     """
