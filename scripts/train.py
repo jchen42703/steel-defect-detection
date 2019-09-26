@@ -13,6 +13,7 @@ from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingL
 
 from steel.io.dataset import SteelDataset
 from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df
+from steel.utils.train_utils import seed_everything
 
 def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="resnet50",
          test_size=0.1, use_resized_dataset=False, split_seed=42, attention_type="scse"):
@@ -33,6 +34,7 @@ def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="
     # setting up the train/val split with filenames
     train, sub, id_mask_count = setup_train_and_sub_df(path)
     # setting up the train/val split with filenames
+    seed_everything(split_seed)
     train_ids, valid_ids = train_test_split(id_mask_count["im_id"].values, random_state=split_seed,
                                             stratify=id_mask_count["count"], test_size=test_size)
     # setting up model (U-Net with ImageNet Encoders)
