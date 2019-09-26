@@ -81,7 +81,7 @@ def create_submission(model, loaders, runner, sub, class_params="default"):
         class_params (dict): with keys class: (threshold, minimum component size)
     """
     if class_params == "default":
-        class_params = {0: (0.75, 10000), 1: (0.5, 10000), 2: (0.7, 10000), 3: (0.45, 10000)}
+        class_params = {0: (0.5, 10000), 1: (0.5, 10000), 2: (0.5, 10000), 3: (0.5, 10000)}
     assert isinstance(class_params, dict)
 
     logdir = "./logs/segmentation"
