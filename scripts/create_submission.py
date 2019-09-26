@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from catalyst.dl.callbacks import InferCallback, CheckpointCallback
 from catalyst.dl.runner import SupervisedRunner
 
-from steel.io.dataset import CloudDataset
+from steel.io.dataset import SteelDataset
 from steel.io.utils import post_process, mask2rle, sigmoid
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
 from steel.inference.inference import get_encoded_pixels
@@ -45,10 +45,10 @@ def main(path, bs=8, encoder="resnet34", attention_type="scse"):
     #                                         stratify=id_mask_count["count"], test_size=test_size)
     test_ids = sub["Image_Label"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
     # datasets/data loaders
-    # valid_dataset = CloudDataset(path, df=train, datatype="valid", im_ids=valid_ids,
+    # valid_dataset = SteelDataset(path, df=train, datatype="valid", im_ids=valid_ids,
                                  # transforms=get_validation_augmentation(),
                                  # preprocessing=get_preprocessing(preprocessing_fn))
-    test_dataset = CloudDataset(path, df=sub, datatype="test", im_ids=test_ids,
+    test_dataset = SteelDataset(path, df=sub, datatype="test", im_ids=test_ids,
                                 transforms=get_validation_augmentation(),
                                 preprocessing=get_preprocessing(preprocessing_fn))
     # valid_loader = DataLoader(valid_dataset, batch_size=bs, shuffle=False, num_workers=num_workers)

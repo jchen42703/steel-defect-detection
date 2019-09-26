@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from catalyst.dl.runner import SupervisedRunner
 
-from steel.io.dataset import CloudDataset
+from steel.io.dataset import SteelDataset
 from steel.io.utils import post_process, sigmoid
 from steel.metrics import dice
 from utils import get_preprocessing, get_validation_augmentation, setup_train_and_sub_df
@@ -56,7 +56,7 @@ def predict_validation(path="../input/understanding_cloud_organization", bs=5, e
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, "imagenet")
     # Setting up the I/O
     num_workers = 0
-    valid_dataset = CloudDataset(path, df=train, datatype="valid", im_ids=valid_ids,
+    valid_dataset = SteelDataset(path, df=train, datatype="valid", im_ids=valid_ids,
                                  transforms=get_validation_augmentation(use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
                                  use_resized_dataset=use_resized_dataset)
 

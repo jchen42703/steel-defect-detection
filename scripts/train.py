@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
 
-from steel.io.dataset import CloudDataset
+from steel.io.dataset import SteelDataset
 from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df
 
 def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="resnet50",
@@ -52,10 +52,10 @@ def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="
 
     # Setting up the I/O
     num_workers = 0
-    train_dataset = CloudDataset(path, df=train, datatype="train", im_ids=train_ids,
+    train_dataset = SteelDataset(path, df=train, datatype="train", im_ids=train_ids,
                                  transforms=get_training_augmentation(use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
                                  use_resized_dataset=use_resized_dataset)
-    valid_dataset = CloudDataset(path, df=train, datatype="valid", im_ids=valid_ids,
+    valid_dataset = SteelDataset(path, df=train, datatype="valid", im_ids=valid_ids,
                                  transforms=get_validation_augmentation(use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
                                  use_resized_dataset=use_resized_dataset)
 
