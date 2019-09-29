@@ -1,7 +1,5 @@
-import tqdm
 import gc
 import os
-import segmentation_models_pytorch as smp
 import tqdm
 import cv2
 import torch
@@ -11,54 +9,50 @@ import segmentation_models_pytorch as smp
 import pickle
 
 from torch.utils.data import DataLoader
-from catalyst.dl.callbacks import InferCallback, CheckpointCallback
 from catalyst.dl.runner import SupervisedRunner
 
 from steel.io.dataset import SteelDataset
 from steel.io.utils import post_process, mask2rle, sigmoid
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
-from steel.inference.inference import get_encoded_pixels
+from steel.inference.inference import get_encoded_pixels, load_weights_infer
 
-def main(path, bs=8, encoder="resnet34", attention_type="scse"):
+def main(args):
     """
+    Main code for creating the segmentation-only submission file. All masks are
+    converted to either "" or RLEs
+
     Args:
-        path (str): Path to the dataset (unzipped)
-        bs (int): batch size
-        encoder (str): one of the encoders in https://github.com/qubvel/segmentation_models.pytorch
+        args (instance of argparse.ArgumentParser): arguments must be compiled with parse_args
+    Returns:
+        None
     """
     torch.cuda.empty_cache()
     gc.collect()
 
-    attention_type = None if attention_type == "None" else attention_type
+    attention_type = None if args.attention_type == "None" else args.attention_type
     model = smp.Unet(
-        encoder_name=encoder,
+        encoder_name=args.encoder,
         encoder_weights=None,
         classes=4,
         activation=None,
         attention_type=attention_type
     )
     # setting up the test I/O
-    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, "imagenet")
+    preprocessing_fn = smp.encoders.get_preprocessing_fn(args.encoder, "imagenet")
     # setting up the train/val split with filenames
-    train, sub, _ = setup_train_and_sub_df(path)
-    # train_ids, valid_ids = train_test_split(id_mask_count["im_id"].values, random_state=42,
-    #                                         stratify=id_mask_count["count"], test_size=test_size)
+    train, sub, _ = setup_train_and_sub_df(args.dset_path)
     test_ids = sub["Image_Label"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
     # datasets/data loaders
-    # valid_dataset = SteelDataset(path, df=train, datatype="valid", im_ids=valid_ids,
-                                 # transforms=get_validation_augmentation(),
-                                 # preprocessing=get_preprocessing(preprocessing_fn))
-    test_dataset = SteelDataset(path, df=sub, datatype="test", im_ids=test_ids,
+    test_dataset = SteelDataset(args.dset_path, df=sub, datatype="test", im_ids=test_ids,
                                 transforms=get_validation_augmentation(),
                                 preprocessing=get_preprocessing(preprocessing_fn))
-    # valid_loader = DataLoader(valid_dataset, batch_size=bs, shuffle=False, num_workers=num_workers)
-    test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=0)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
     runner = SupervisedRunner()
     # loaders = {"valid": valid_loader, "test": test_loader}
     loaders = {"test": test_loader}
     # loading the pickled class_params if they exist
-    class_params_path = os.path.join(path, "class_params.pickle")
+    class_params_path = os.path.join(args.dset_path, "class_params.pickle")
     if os.path.exists(class_params_path):
         print(f"Loading {class_params_path}...")
         # Load data (deserialize)
@@ -67,12 +61,14 @@ def main(path, bs=8, encoder="resnet34", attention_type="scse"):
     else:
         class_params = "default"
 
-    create_submission(model=model, loaders=loaders, runner=runner, sub=sub, class_params=class_params)
+    create_submission(args.checkpoint_path, model=model, loaders=loaders,
+                      runner=runner, sub=sub, class_params=class_params)
 
-def create_submission(model, loaders, runner, sub, class_params="default"):
+def create_submission(checkpoint_path, model, loaders, runner, sub, class_params="default"):
     """
     runner: with .infer set
     Args:
+        checkpoint_path (str): path to a .pt or .pth file
         model (nn.Module): Segmentation module that outputs logits
         loaders: dictionary of data loaders with at least the key: "test"
         runner (an instance of a catalyst.dl.runner.SupervisedRunner):
@@ -81,17 +77,11 @@ def create_submission(model, loaders, runner, sub, class_params="default"):
         class_params (dict): with keys class: (threshold, minimum component size)
     """
     if class_params == "default":
-        class_params = {0: (0.5, 10000), 1: (0.5, 10000), 2: (0.5, 10000), 3: (0.5, 10000)}
+        class_params = {0: (0.5, 3500), 1: (0.5, 3500), 2: (0.5, 3500), 3: (0.5, 3500)}
     assert isinstance(class_params, dict)
 
-    logdir = "./logs/segmentation"
-    ckpoint_path = os.path.join(logdir, "checkpoints", "best.pth")
-    runner.infer(model=model, loaders=loaders, callbacks=[
-            CheckpointCallback(
-                resume=ckpoint_path,)
-        ], verbose=True
-    )
-    print("Converting predicted masks to rle"s...")
+    model = load_weights_infer(checkpoint_path, model)
+    print("Converting predicted masks to run-length-encodings...")
     encoded_pixels = get_encoded_pixels(loaders=loaders, runner=runner,
                                         class_params=class_params)
     # Saving the submission dataframe
@@ -104,8 +94,6 @@ if __name__ == "__main__":
     import argparse
     # parsing the arguments from the command prompt
     parser = argparse.ArgumentParser(description="For inference.")
-    # parser.add_argument("--log_dir", type=str, required=True,
-    #                     help="Path to the base directory where logs and weights are saved")
     parser.add_argument("--dset_path", type=str, required=True,
                         help="Path to the unzipped kaggle dataset directory.")
     parser.add_argument("--batch_size", type=int, required=False, default=8,
@@ -114,5 +102,8 @@ if __name__ == "__main__":
                         help="one of the encoders in https://github.com/qubvel/segmentation_models.pytorch")
     parser.add_argument("--attention_type", type=str, required=False, default="scse",
                         help="Attention type; if you want None, just put the string None.")
+    parser.add_argument("--checkpoint_path", type=str, required=False,
+                        default="./logs/segmentation/checkpoints/best.pth",
+                        help="Path to log directory that was created when training.")
     args = parser.parse_args()
-    main(args.dset_path, bs=args.batch_size, encoder=args.encoder, attention_type=args.attention_type)
+    main(args)
