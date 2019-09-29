@@ -34,7 +34,7 @@ def main(args):
     # setting up the test I/O
     preprocessing_fn = smp.encoders.get_preprocessing_fn("resnet34", "imagenet")
     train, sub, _ = setup_train_and_sub_df(args.dset_path)
-    test_ids = sub["Image_Label"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
+    test_ids = sub["ImageId_ClassId"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
     # datasets/data loaders
     test_dataset = ClassificationSteelDataset(
                                               args.dset_path, df=sub, datatype="test", im_ids=test_ids,
