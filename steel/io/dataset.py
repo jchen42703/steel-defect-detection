@@ -7,7 +7,7 @@ import os
 import cv2
 
 from torch.utils.data import Dataset
-from .utils import make_mask, make_mask_no_rle
+from .utils import make_mask, make_mask_no_rle, get_classification_label
 
 class SteelDataset(Dataset):
     def __init__(self, path: str, df: pd.DataFrame=None, datatype: str="train", im_ids: np.array=None,
@@ -46,3 +46,32 @@ class SteelDataset(Dataset):
 
     def __len__(self):
         return len(self.img_ids)
+
+class ClassificationSteelDataset(Dataset):
+    def __init__(self, path: str, df: pd.DataFrame=None, datatype: str="train", im_ids: np.array=None,
+                 transforms=albu.Compose([albu.HorizontalFlip(), AT.ToTensor()]),
+                 preprocessing=None):
+        df["hasMask"] = ~ df["EncodedPixels"].isna()
+        self.df = df
+        if datatype != "test":
+            self.data_folder = os.path.join(path, "train_images")
+        else:
+            self.data_folder = os.path.join(path, "test_images")
+        self.img_ids = im_ids
+        self.transforms = transforms
+        self.preprocessing = preprocessing
+
+    def __getitem__(self, idx):
+        image_name = self.img_ids[idx]
+        # loading image
+        image_path = os.path.join(self.data_folder, image_name)
+        img = cv2.imread(image_path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        class_label = get_classification_label(self.df, image_name)
+        # apply augmentations
+        augmented = self.transforms(image=img)
+        img = augmented["image"]
+        if self.preprocessing:
+            preprocessed = self.preprocessing(image=img, mask=None)
+            img = preprocessed["image"]
+        return img, class_label
