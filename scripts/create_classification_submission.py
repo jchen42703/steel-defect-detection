@@ -77,12 +77,13 @@ def create_submission(checkpoint_path, model, loaders, runner, sub, class_params
     model = load_weights_infer(checkpoint_path, model)
 
     print("Predicting classes...")
-    predictions = get_classification_predictions(loaders=loaders, runner=runner,
+    model.cuda()
+    predictions = get_classification_predictions(loaders=loaders, model=model,
                                                  class_params=class_params)
     # Saving the submission dataframe
     sub["EncodedPixels"] = predictions
     save_path = os.path.join(os.getcwd(), "submission_classification.csv")
-    sub.to_csv(save_path, columns=["Image_Label", "EncodedPixels"], index=False)
+    sub.to_csv(save_path, columns=["ImageId_ClassId", "EncodedPixels"], index=False)
     print(f"Saved the submission file at {save_path}")
 
 if __name__ == "__main__":
