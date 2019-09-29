@@ -9,7 +9,6 @@ import segmentation_models_pytorch as smp
 import pickle
 
 from torch.utils.data import DataLoader
-from catalyst.dl.runner import SupervisedRunner
 
 from steel.io.dataset import ClassificationSteelDataset
 from steel.models.classification_model import ResNet34
@@ -43,7 +42,6 @@ def main(args):
                                              )
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
-    runner = SupervisedRunner()
     loaders = {"test": test_loader}
     # loading the pickled class_params if they exist
     class_params_path = os.path.join(args.dset_path, "class_params_classification.pickle")
@@ -56,16 +54,14 @@ def main(args):
         class_params = "default"
 
     create_submission(args.checkpoint_path, model=model, loaders=loaders,
-                      runner=runner, sub=sub, class_params=class_params)
+                      sub=sub, class_params=class_params)
 
-def create_submission(checkpoint_path, model, loaders, runner, sub, class_params="default"):
+def create_submission(checkpoint_path, model, loaders, sub, class_params="default"):
     """
-    runner: with .infer set
     Args:
         checkpoint_path (str): path to a .pt or .pth file
         model (nn.Module): Segmentation module that outputs logits
         loaders: dictionary of data loaders with at least the key: "test"
-        runner (an instance of a catalyst.dl.runner.SupervisedRunner):
         sub (pandas.DataFrame): sample submission dataframe. This is used to
             create the final submission dataframe.
         class_params (dict): with keys class: (threshold, minimum component size)
