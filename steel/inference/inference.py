@@ -5,7 +5,7 @@ import torch
 
 from steel.io.utils import mask2rle, post_process, sigmoid
 
-def get_encoded_pixels(loaders, runners, class_params):
+def get_encoded_pixels(loaders, runner, class_params):
     """
     Processes predicted logits and converts them to encoded pixels. Does so in an iterative
     manner so operations are done image-wise rather than on the full dataset directly (to
@@ -39,7 +39,7 @@ def get_encoded_pixels(loaders, runners, class_params):
                 image_id += 1
     return encoded_pixels
 
-def get_classification_predictions(loaders, runners, class_params):
+def get_classification_predictions(loaders, runner, class_params):
     """
     Processes predicted logits and converts them to encoded pixels. Does so in an iterative
     manner so operations are done image-wise rather than on the full dataset directly (to
@@ -80,7 +80,7 @@ def load_weights_infer(checkpoint_path, model):
     Returns:
         Model with loaded weights and in evaluation mode
     """
-    state_dict = torch.load(checkpoint_path, map_location="cpu")
+    state_dict = torch.load(checkpoint_path, map_location="cpu")["model_state_dict"]
     model.load_state_dict(state_dict, strict=True)
     model.eval()
     return model
