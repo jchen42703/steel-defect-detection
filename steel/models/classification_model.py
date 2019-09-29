@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torchvision.models import resnet34
 
-from model_utils import ClassificationHeadResNet
+from .model_utils import ClassificationHeadResNet
 
 class ResNet34(nn.Module):
     def __init__(self, pre=True, num_classes=4, use_simple_head=True):
