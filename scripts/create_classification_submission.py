@@ -12,15 +12,20 @@ from torch.utils.data import DataLoader
 from catalyst.dl.runner import SupervisedRunner
 
 from steel.io.dataset import ClassificationSteelDataset
-from steel.io.utils import post_process, sigmoid
+from steel.models.classification_model import ResNet34
+from steel.io.utils import sigmoid
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
 from steel.inference.inference import get_classification_predictions, load_weights_infer
 
 def main(args):
     """
+    Main code for creating the classification submission file. No masks predictions will be blank,
+    and predictions for masks will be "1".
+
     Args:
-        path (str): Path to the dataset (unzipped)
-        bs (int): batch size
+        args (instance of argparse.ArgumentParser): arguments must be compiled with parse_args
+    Returns:
+        None
     """
     torch.cuda.empty_cache()
     gc.collect()
@@ -28,7 +33,7 @@ def main(args):
     model = ResNet34(pre=None, num_classes=4, use_simple_head=True)
     # setting up the test I/O
     preprocessing_fn = smp.encoders.get_preprocessing_fn("resnet34", "imagenet")
-    train, sub, _ = setup_train_and_sub_df(path)
+    train, sub, _ = setup_train_and_sub_df(args.dset_path)
     test_ids = sub["Image_Label"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
     # datasets/data loaders
     test_dataset = ClassificationSteelDataset(
@@ -41,7 +46,7 @@ def main(args):
     runner = SupervisedRunner()
     loaders = {"test": test_loader}
     # loading the pickled class_params if they exist
-    class_params_path = os.path.join(path, "class_params_classification.pickle")
+    class_params_path = os.path.join(args.dset_path, "class_params_classification.pickle")
     if os.path.exists(class_params_path):
         print(f"Loading {class_params_path}...")
         # Load data (deserialize)
@@ -50,12 +55,14 @@ def main(args):
     else:
         class_params = "default"
 
-    create_submission(model=model, loaders=loaders, runner=runner, sub=sub, class_params=class_params)
+    create_submission(args.checkpoint_path, model=model, loaders=loaders,
+                      runner=runner, sub=sub, class_params=class_params)
 
-def create_submission(model, loaders, runner, sub, class_params="default"):
+def create_submission(checkpoint_path, model, loaders, runner, sub, class_params="default"):
     """
     runner: with .infer set
     Args:
+        checkpoint_path (str): path to a .pt or .pth file
         model (nn.Module): Segmentation module that outputs logits
         loaders: dictionary of data loaders with at least the key: "test"
         runner (an instance of a catalyst.dl.runner.SupervisedRunner):
@@ -67,9 +74,7 @@ def create_submission(model, loaders, runner, sub, class_params="default"):
         class_params = {0: 0.5, 1: 0.5, 2: 0.5, 3: 0.5}
     assert isinstance(class_params, dict)
 
-    logdir = "./logs/segmentation"
-    ckpoint_path = os.path.join(logdir, "checkpoints", "best.pth")
-    model = load_weights_infer(ckpoint_path, model)
+    model = load_weights_infer(checkpoint_path, model)
 
     print("Predicting classes...")
     predictions = get_classification_predictions(loaders=loaders, runner=runner,
@@ -84,11 +89,12 @@ if __name__ == "__main__":
     import argparse
     # parsing the arguments from the command prompt
     parser = argparse.ArgumentParser(description="For inference.")
-    # parser.add_argument("--log_dir", type=str, required=True,
-    #                     help="Path to the base directory where logs and weights are saved")
     parser.add_argument("--dset_path", type=str, required=True,
                         help="Path to the unzipped kaggle dataset directory.")
     parser.add_argument("--batch_size", type=int, required=False, default=8,
                         help="Batch size")
+    parser.add_argument("--checkpoint_path", type=str, required=False,
+                        default="./logs/segmentation/checkpoints/best.pth",
+                        help="Path to log directory that was created when training.")
     args = parser.parse_args()
     main(args)
