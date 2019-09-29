@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import pandas as pd
 import os
+import torch
 
 def run_length_decode(rle, height=256, width=1600, fill_value=1):
     mask = np.zeros((height,width), np.float32)
@@ -61,6 +62,18 @@ def make_mask_no_rle(df: pd.DataFrame, image_name: str="img.jpg",
             masks[:, :, classidx] = mask
     masks = masks/255
     return masks
+
+def get_classification_label(df: pd.DataFrame, image_name: str):
+    """
+    Gets one-hot encoded labels. Assumes that the dataframe is coming in through
+    ClassificationSteelDataset where there is a "hasMask" column.
+
+    Returns:
+        One-hot encoded torch tensor (length 4) of the label present for each class.
+    """
+    df = df[df["im_id"] == image_name]
+    label = df["hasMask"].values * np.ones(4)
+    return torch.from_numpy(label).float()
 
 def to_tensor(x, **kwargs):
     """
