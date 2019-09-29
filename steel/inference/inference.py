@@ -5,7 +5,7 @@ import torch
 
 from steel.io.utils import mask2rle, post_process, sigmoid
 
-def get_encoded_pixels(loaders, runner, class_params):
+def get_encoded_pixels(loaders, model, class_params):
     """
     Processes predicted logits and converts them to encoded pixels. Does so in an iterative
     manner so operations are done image-wise rather than on the full dataset directly (to
@@ -13,7 +13,6 @@ def get_encoded_pixels(loaders, runner, class_params):
 
     Args:
         loaders: dictionary of data loaders with at least the key: "test"
-        runner (an instance of a catalyst.dl.runner.SupervisedRunner):
         sub (pandas.DataFrame): sample submission dataframe. This is used to
             create the final submission dataframe.
         class_params (dict): with keys class: (threshold, minimum component size)
@@ -21,8 +20,8 @@ def get_encoded_pixels(loaders, runner, class_params):
     encoded_pixels = []
     image_id = 0
     for i, test_batch in enumerate(tqdm.tqdm(loaders["test"])):
-        runner_out = runner.predict_batch({"features": test_batch[0].cuda()})["logits"]
-        # for each batch (n, h, w): resize and post_process
+        runner_out = model(test_batch[0].cuda())
+        # for each batch (4, h, w): resize and post_process
         for i, batch in enumerate(runner_out):
             for probability in batch:
                 # iterating through each probability map (h, w)

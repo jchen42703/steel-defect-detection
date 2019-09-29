@@ -9,7 +9,6 @@ import segmentation_models_pytorch as smp
 import pickle
 
 from torch.utils.data import DataLoader
-from catalyst.dl.runner import SupervisedRunner
 
 from steel.io.dataset import SteelDataset
 from steel.io.utils import post_process, mask2rle, sigmoid
@@ -44,12 +43,10 @@ def main(args):
     test_ids = sub["ImageId_ClassId"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
     # datasets/data loaders
     test_dataset = SteelDataset(args.dset_path, df=sub, datatype="test", im_ids=test_ids,
-                                transforms=get_validation_augmentation(),
+                                transforms=get_validation_augmentation(True),
                                 preprocessing=get_preprocessing(preprocessing_fn))
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
-    runner = SupervisedRunner()
-    # loaders = {"valid": valid_loader, "test": test_loader}
     loaders = {"test": test_loader}
     # loading the pickled class_params if they exist
     class_params_path = os.path.join(args.dset_path, "class_params.pickle")
@@ -62,9 +59,9 @@ def main(args):
         class_params = "default"
 
     create_submission(args.checkpoint_path, model=model, loaders=loaders,
-                      runner=runner, sub=sub, class_params=class_params)
+                      sub=sub, class_params=class_params)
 
-def create_submission(checkpoint_path, model, loaders, runner, sub, class_params="default"):
+def create_submission(checkpoint_path, model, loaders, sub, class_params="default"):
     """
     runner: with .infer set
     Args:
@@ -81,8 +78,10 @@ def create_submission(checkpoint_path, model, loaders, runner, sub, class_params
     assert isinstance(class_params, dict)
 
     model = load_weights_infer(checkpoint_path, model)
+    model.cuda()
+
     print("Converting predicted masks to run-length-encodings...")
-    encoded_pixels = get_encoded_pixels(loaders=loaders, runner=runner,
+    encoded_pixels = get_encoded_pixels(loaders=loaders, model=model,
                                         class_params=class_params)
     # Saving the submission dataframe
     sub["EncodedPixels"] = encoded_pixels
