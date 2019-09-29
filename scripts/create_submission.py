@@ -87,7 +87,7 @@ def create_submission(checkpoint_path, model, loaders, runner, sub, class_params
     # Saving the submission dataframe
     sub["EncodedPixels"] = encoded_pixels
     save_path = os.path.join(os.getcwd(), "submission.csv")
-    sub.to_csv(save_path, columns=["Image_Label", "EncodedPixels"], index=False)
+    sub.to_csv(save_path, columns=["ImageId_ClassId", "EncodedPixels"], index=False)
     print(f"Saved the submission file at {save_path}")
 
 if __name__ == "__main__":
