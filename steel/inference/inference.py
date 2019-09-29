@@ -39,7 +39,7 @@ def get_encoded_pixels(loaders, runner, class_params):
                 image_id += 1
     return encoded_pixels
 
-def get_classification_predictions(loaders, runner, class_params):
+def get_classification_predictions(loaders, model, class_params):
     """
     Processes predicted logits and converts them to encoded pixels. Does so in an iterative
     manner so operations are done image-wise rather than on the full dataset directly (to
@@ -55,19 +55,16 @@ def get_classification_predictions(loaders, runner, class_params):
     predictions = []
     image_id = 0
     for i, test_batch in enumerate(tqdm.tqdm(loaders["test"])):
-        runner_out = runner.predict_batch({"features": test_batch[0].cuda()})["logits"]
-        # for each batch (n, h, w): resize and post_process
+        runner_out = model(test_batch[0].cuda())
+        # for each batch (n, 4): post process
         for i, batch in enumerate(runner_out):
-            for probability in batch:
-                # iterating through each probability map (h, w)
-                probability = probability.cpu().detach().numpy()
+            # iterating through each prediction (4,)
+            probability = batch.cpu().detach().numpy()
 
-                predict = cv2.threshold(sigmoid(probability), class_params[image_id % 4], 1, cv2.THRESH_BINARY)[1]
-                if predict == 0:
-                    predictions.append("")
-                else:
-                    predictions.append("1")
-                image_id += 1
+            predict = cv2.threshold(sigmoid(probability), class_params[image_id % 4], 1, cv2.THRESH_BINARY)[1]
+            # Idea: [imgid_1, imgid_2, imgid_3, imgid_4, imgid2_1,...]
+            predictions = predictions + predict.flatten().tolist()
+            image_id += 1
     return predictions
 
 def load_weights_infer(checkpoint_path, model):
