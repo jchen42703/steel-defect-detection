@@ -75,3 +75,6 @@ class ClassificationSteelDataset(Dataset):
             preprocessed = self.preprocessing(image=img, mask=None)
             img = preprocessed["image"]
         return img, class_label
+
+    def __len__(self):
+        return len(self.img_ids)
