@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
 
 from steel.io.dataset import ClassificationSteelDataset
+from steel.models.classification_model import ResNet34
 from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df, seed_everything
 
 def main(args):
@@ -30,29 +31,27 @@ def main(args):
     # setting up the train/val split with filenames
     train, sub, id_mask_count = setup_train_and_sub_df(args.dset_path)
     # setting up the train/val split with filenames
-    seed_everything(split_seed)
+    seed_everything(args.split_seed)
     train_ids, valid_ids = train_test_split(id_mask_count["im_id"].values, random_state=args.split_seed,
                                             stratify=id_mask_count["count"], test_size=args.test_size)
     # setting up the classification model
     ENCODER_WEIGHTS = "imagenet"
     DEVICE = "cuda"
-    model = ResNet34(pre=ENCODER_WEIGHTS, num_classe=4, use_simple_head=True)
+    model = ResNet34(pre=ENCODER_WEIGHTS, num_classes=4, use_simple_head=True)
 
-    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, ENCODER_WEIGHTS)
+    preprocessing_fn = smp.encoders.get_preprocessing_fn("resnet34", ENCODER_WEIGHTS)
 
     # Setting up the I/O
     num_workers = 0
-    train_dataset = CLassificationSteelDataset(
+    train_dataset = ClassificationSteelDataset(
                                                 args.dset_path, df=train, datatype="train", im_ids=train_ids,
-                                                transforms=get_training_augmentation(use_resized_dataset),
+                                                transforms=get_training_augmentation(True),
                                                 preprocessing=get_preprocessing(preprocessing_fn),
-                                                use_resized_dataset=args.use_resized_dataset
                                                )
     valid_dataset = ClassificationSteelDataset(
                                                 args.dset_path, df=train, datatype="valid", im_ids=valid_ids,
-                                                transforms=get_validation_augmentation(use_resized_dataset),
+                                                transforms=get_validation_augmentation(True),
                                                 preprocessing=get_preprocessing(preprocessing_fn),
-                                                use_resized_dataset=args.use_resized_dataset)
                                                )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers)
@@ -88,22 +87,6 @@ def main(args):
         metrics=["loss", "dice", "lr", "_base/lr"]
     )
 
-def add_bool_arg(parser, name, default=False):
-    """
-    From: https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
-    Handles boolean cases from command line through the creating two mutually exclusive arguments: --name and --no-name.
-    Args:
-        parser (arg.parse.ArgumentParser): the parser you want to add the arguments to
-        name: name of the common feature name for the two mutually exclusive arguments; dest = name
-        default: default boolean for command line
-    Returns:
-        None
-    """
-    group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("--" + name, dest=name, action="store_true")
-    group.add_argument("--no-" + name, dest=name, action="store_false")
-    parser.set_defaults(**{name:default})
-
 if __name__ == "__main__":
     import argparse
     # parsing the arguments from the command prompt
@@ -118,7 +101,6 @@ if __name__ == "__main__":
                         help="Batch size")
     parser.add_argument("--test_size", type=float, required=False, default=0.1,
                         help="Fraction of total dataset to make the validation set.")
-    add_bool_arg(parser, "use_resized_dataset", default=False)
     parser.add_argument("--split_seed", type=int, required=False, default=42,
                         help="Seed for the train/val dataset split")
     args = parser.parse_args()
