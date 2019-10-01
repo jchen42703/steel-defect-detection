@@ -14,54 +14,45 @@ from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingL
 from steel.io.dataset import SteelDataset
 from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df, seed_everything
 
-def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="resnet50",
-         test_size=0.1, use_resized_dataset=False, split_seed=42, attention_type="scse"):
+def main(args):
     """
-    Main code for training.
+    Main code for training for training a U-Net with some user-defined encoder.
     Args:
-        path (str): Path to the dataset (unzipped)
-        num_epochs (int): number of epochs to train for
-        bs (int): batch size
-        encoder (str): one of the encoders in https://github.com/qubvel/segmentation_models.pytorch
-        use_resized_dataset (bool): Whether or not you are using the original or the pre-resized dataset
-        split_seed (int): seed for the dataset split
+        args (instance of argparse.ArgumentParser): arguments must be compiled with parse_args
+    Returns:
+        None
     """
-    # Reading the in the .csvs
-    train = pd.read_csv(f"{path}/train.csv")
-    sub = pd.read_csv(f"{path}/sample_submission.csv")
-
     # setting up the train/val split with filenames
-    train, sub, id_mask_count = setup_train_and_sub_df(path)
+    train, sub, id_mask_count = setup_train_and_sub_df(args.dset_path)
     # setting up the train/val split with filenames
-    seed_everything(split_seed)
-    train_ids, valid_ids = train_test_split(id_mask_count["im_id"].values, random_state=split_seed,
-                                            stratify=id_mask_count["count"], test_size=test_size)
+    seed_everything(args.split_seed)
+    train_ids, valid_ids = train_test_split(id_mask_count["im_id"].values, random_state=args.split_seed,
+                                            stratify=id_mask_count["count"], test_size=args.test_size)
     # setting up model (U-Net with ImageNet Encoders)
     ENCODER_WEIGHTS = "imagenet"
     DEVICE = "cuda"
 
-    ACTIVATION = None
-    attention_type = None if attention_type == "None" else attention_type
+    attention_type = None if args.attention_type == "None" else args.attention_type
     model = smp.Unet(
-        encoder_name=encoder,
+        encoder_name=args.encoder,
         encoder_weights=ENCODER_WEIGHTS,
         classes=4,
-        activation=ACTIVATION,
+        activation=None,
         attention_type=attention_type
     )
-    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, ENCODER_WEIGHTS)
+    preprocessing_fn = smp.encoders.get_preprocessing_fn(args.encoder, ENCODER_WEIGHTS)
 
     # Setting up the I/O
     num_workers = 0
-    train_dataset = SteelDataset(path, df=train, datatype="train", im_ids=train_ids,
-                                 transforms=get_training_augmentation(use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
-                                 use_resized_dataset=use_resized_dataset)
-    valid_dataset = SteelDataset(path, df=train, datatype="valid", im_ids=valid_ids,
-                                 transforms=get_validation_augmentation(use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
-                                 use_resized_dataset=use_resized_dataset)
+    train_dataset = SteelDataset(args.dset_path, df=train, datatype="train", im_ids=train_ids,
+                                 transforms=get_training_augmentation(args.use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
+                                 use_resized_dataset=args.use_resized_dataset)
+    valid_dataset = SteelDataset(args.dset_path, df=train, datatype="valid", im_ids=valid_ids,
+                                 transforms=get_validation_augmentation(args.use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
+                                 use_resized_dataset=args.use_resized_dataset)
 
-    train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=num_workers)
-    valid_loader = DataLoader(valid_dataset, batch_size=bs, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers)
+    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers)
 
     loaders = {
         "train": train_loader,
@@ -72,8 +63,8 @@ def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="
 
     # model, criterion, optimizer
     optimizer = torch.optim.Adam([
-        {"params": model.decoder.parameters(), "lr": 1e-2},
-        {"params": model.encoder.parameters(), "lr": 1e-3},
+        {"params": model.decoder.parameters(), "lr": args.lr},
+        {"params": model.encoder.parameters(), "lr": args.lr/10},
     ])
     scheduler = ReduceLROnPlateau(optimizer, factor=0.15, patience=2)
     criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
@@ -87,13 +78,8 @@ def main(path="../input/steel-defect-detection", num_epochs=21, bs=16, encoder="
         loaders=loaders,
         callbacks=[DiceCallback(), EarlyStoppingCallback(patience=5, min_delta=0.001)],
         logdir=logdir,
-        num_epochs=num_epochs,
+        num_epochs=args.num_epochs,
         verbose=True
-    )
-    utils.plot_metrics(
-        logdir=logdir,
-        # specify which metrics we want to plot
-        metrics=["loss", "dice", "lr", "_base/lr"]
     )
 
 def add_bool_arg(parser, name, default=False):
@@ -124,6 +110,8 @@ if __name__ == "__main__":
                         help="Number of epochs")
     parser.add_argument("--batch_size", type=int, required=False, default=16,
                         help="Batch size")
+    parser.add_argument("--lr", type=float, required=False, default=0.003,
+                        help="Learning rate for the encoder. Decoder is just this/10")
     parser.add_argument("--encoder", type=str, required=False, default="resnet50",
                         help="one of the encoders in https://github.com/qubvel/segmentation_models.pytorch")
     parser.add_argument("--test_size", type=float, required=False, default=0.1,
@@ -135,6 +123,4 @@ if __name__ == "__main__":
                         help="Attention type; if you want None, just put the string None.")
     args = parser.parse_args()
 
-    main(path=args.dset_path, num_epochs=args.num_epochs, bs=args.batch_size,
-         encoder=args.encoder, test_size=args.test_size, use_resized_dataset=args.use_resized_dataset,
-         split_seed=args.split_seed, attention_type=args.attention_type)
+    main(args)
