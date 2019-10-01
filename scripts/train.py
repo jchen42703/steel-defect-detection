@@ -63,8 +63,8 @@ def main(args):
 
     # model, criterion, optimizer
     optimizer = torch.optim.Adam([
-        {"params": model.decoder.parameters(), "lr": args.lr},
-        {"params": model.encoder.parameters(), "lr": args.lr/10},
+        {"params": model.decoder.parameters(), "lr": args.encoder_lr},
+        {"params": model.encoder.parameters(), "lr": args.decoder_lr},
     ])
     scheduler = ReduceLROnPlateau(optimizer, factor=0.15, patience=2)
     criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
@@ -110,8 +110,10 @@ if __name__ == "__main__":
                         help="Number of epochs")
     parser.add_argument("--batch_size", type=int, required=False, default=16,
                         help="Batch size")
-    parser.add_argument("--lr", type=float, required=False, default=0.003,
-                        help="Learning rate for the encoder. Decoder is just this/10")
+    parser.add_argument("--encoder_lr", type=float, required=False, default=0.00001,
+                        help="Learning rate for the encoder.")
+    parser.add_argument("--decoder_lr", type=float, required=False, default=0.001,
+                        help="Learning rate for the decoder.")
     parser.add_argument("--encoder", type=str, required=False, default="resnet50",
                         help="one of the encoders in https://github.com/qubvel/segmentation_models.pytorch")
     parser.add_argument("--test_size", type=float, required=False, default=0.1,
