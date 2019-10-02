@@ -29,7 +29,7 @@ class SteelDataset(Dataset):
         if not self.use_resized_dataset:
             mask = make_mask(self.df, image_name)
         else:
-            mask = make_mask_no_rle(self.df, image_name, self.masks_folder)
+            mask = make_mask_no_rle(image_name, self.masks_folder)
         # loading image
         image_path = os.path.join(self.data_folder, image_name)
         img = cv2.imread(image_path)

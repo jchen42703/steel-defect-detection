@@ -43,24 +43,20 @@ def make_mask_single(df: pd.DataFrame, label: int, image_name: str="img.jpg", sh
         mask = run_length_decode(encoded, height=shape[0], width=shape[1])
     return mask
 
-def make_mask_no_rle(df: pd.DataFrame, image_name: str="img.jpg",
-                           masks_dir: str="./masks",
-                           shape: tuple=(256, 1600)):
+def make_mask_no_rle(image_name: str="img.jpg",
+                     masks_dir: str="./masks",
+                     shape: tuple=(256, 1600)):
     """
     Create mask based on df, image name and shape.
     """
     masks = np.zeros((shape[0], shape[1], 4), dtype=np.float32)
-    df = df[df["im_id"] == image_name]
-    for idx, im_name in enumerate(df["im_id"].values):
-        for classidx, class_id in enumerate(range(1, 5)):
-            # classidx -> numpy array indexing 0-3, class_id 1-4
-            mask = cv2.imread(os.path.join(masks_dir, f"{class_id}{im_name}"), cv2.IMREAD_GRAYSCALE)
-            if mask is None:
-                continue
-            # if mask[:,:,0].shape != (350,525):
-            #     mask = cv2.resize(mask, (525,350))
-            masks[:, :, classidx] = mask
-    masks = masks/255
+    for arridx, class_id in enumerate(range(1, 5)):
+        # arridx -> numpy array indexing 0-3, class_id 1-4
+        mask = cv2.imread(os.path.join(masks_dir, f"{class_id}{image_name}"), cv2.IMREAD_GRAYSCALE)
+        if mask is None:
+            continue
+        masks[:, :, arridx] = mask
+    masks = masks//255
     return masks
 
 def get_classification_label(df: pd.DataFrame, image_name: str):
