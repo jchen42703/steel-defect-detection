@@ -54,7 +54,7 @@ def make_mask_no_rle(df: pd.DataFrame, image_name: str="img.jpg",
     for idx, im_name in enumerate(df["im_id"].values):
         for classidx, class_id in enumerate(range(1, 5)):
             # classidx -> numpy array indexing 0-3, class_id 1-4
-            mask = cv2.imread(os.path.join(masks_dir, f"{im_name}_{class_id}"), cv2.IMREAD_GRAYSCALE)
+            mask = cv2.imread(os.path.join(masks_dir, f"{class_id}{im_name}"), cv2.IMREAD_GRAYSCALE)
             if mask is None:
                 continue
             # if mask[:,:,0].shape != (350,525):
