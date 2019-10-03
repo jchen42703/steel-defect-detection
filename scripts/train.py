@@ -43,7 +43,6 @@ def main(args):
     preprocessing_fn = smp.encoders.get_preprocessing_fn(args.encoder, ENCODER_WEIGHTS)
 
     # Setting up the I/O
-    num_workers = 0
     train_dataset = SteelDataset(args.dset_path, df=train, datatype="train", im_ids=train_ids,
                                  transforms=get_training_augmentation(), preprocessing=get_preprocessing(preprocessing_fn),
                                  use_resized_dataset=args.use_resized_dataset)
@@ -51,8 +50,8 @@ def main(args):
                                  transforms=get_validation_augmentation(), preprocessing=get_preprocessing(preprocessing_fn),
                                  use_resized_dataset=args.use_resized_dataset)
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers)
-    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
     loaders = {
         "train": train_loader,
@@ -121,6 +120,8 @@ if __name__ == "__main__":
     add_bool_arg(parser, "use_resized_dataset", default=False)
     parser.add_argument("--split_seed", type=int, required=False, default=42,
                         help="Seed for the train/val dataset split")
+    parser.add_argument("--num_workers", type=int, required=False, default=2,
+                        help="Number of workers for data loaders.")
     parser.add_argument("--attention_type", type=str, required=False, default="scse",
                         help="Attention type; if you want None, just put the string None.")
     args = parser.parse_args()

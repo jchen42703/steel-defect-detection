@@ -42,7 +42,6 @@ def main(args):
     preprocessing_fn = smp.encoders.get_preprocessing_fn("resnet34", ENCODER_WEIGHTS)
 
     # Setting up the I/O
-    num_workers = 0
     train_dataset = ClassificationSteelDataset(
                                                 args.dset_path, df=train, datatype="train", im_ids=train_ids,
                                                 transforms=get_training_augmentation(),
@@ -54,8 +53,8 @@ def main(args):
                                                 preprocessing=get_preprocessing(preprocessing_fn),
                                                )
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers)
-    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
     loaders = {
         "train": train_loader,
@@ -103,6 +102,8 @@ if __name__ == "__main__":
                         help="Fraction of total dataset to make the validation set.")
     parser.add_argument("--split_seed", type=int, required=False, default=42,
                         help="Seed for the train/val dataset split")
+    parser.add_argument("--num_workers", type=int, required=False, default=2,
+                        help="Number of workers for data loaders.")
     args = parser.parse_args()
 
     main(args)
