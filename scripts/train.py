@@ -45,10 +45,10 @@ def main(args):
     # Setting up the I/O
     num_workers = 0
     train_dataset = SteelDataset(args.dset_path, df=train, datatype="train", im_ids=train_ids,
-                                 transforms=get_training_augmentation(args.use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
+                                 transforms=get_training_augmentation(), preprocessing=get_preprocessing(preprocessing_fn),
                                  use_resized_dataset=args.use_resized_dataset)
     valid_dataset = SteelDataset(args.dset_path, df=train, datatype="valid", im_ids=valid_ids,
-                                 transforms=get_validation_augmentation(args.use_resized_dataset), preprocessing=get_preprocessing(preprocessing_fn),
+                                 transforms=get_validation_augmentation(), preprocessing=get_preprocessing(preprocessing_fn),
                                  use_resized_dataset=args.use_resized_dataset)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers)

@@ -45,12 +45,12 @@ def main(args):
     num_workers = 0
     train_dataset = ClassificationSteelDataset(
                                                 args.dset_path, df=train, datatype="train", im_ids=train_ids,
-                                                transforms=get_training_augmentation(True),
+                                                transforms=get_training_augmentation(),
                                                 preprocessing=get_preprocessing(preprocessing_fn),
                                                )
     valid_dataset = ClassificationSteelDataset(
                                                 args.dset_path, df=train, datatype="valid", im_ids=valid_ids,
-                                                transforms=get_validation_augmentation(True),
+                                                transforms=get_validation_augmentation(),
                                                 preprocessing=get_preprocessing(preprocessing_fn),
                                                )
 

@@ -43,7 +43,7 @@ def main(args):
     test_ids = sub["ImageId_ClassId"].apply(lambda x: x.split("_")[0]).drop_duplicates().values
     # datasets/data loaders
     test_dataset = SteelDataset(args.dset_path, df=sub, datatype="test", im_ids=test_ids,
-                                transforms=get_validation_augmentation(True),
+                                transforms=get_validation_augmentation(),
                                 preprocessing=get_preprocessing(preprocessing_fn))
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
