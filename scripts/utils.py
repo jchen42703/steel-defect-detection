@@ -34,16 +34,11 @@ def setup_train_and_sub_df(path):
     reset_index().rename(columns={"index": "im_id", "ImageId_ClassId": "count"})
     return (train, sub, id_mask_count)
 
-def get_training_augmentation(use_resized_dataset=False):
+def get_training_augmentation():
     train_transform = [
-
         albu.HorizontalFlip(p=0.5),
         albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1, p=0.5, border_mode=0),
-        albu.GridDistortion(p=0.5),
-        albu.OpticalDistortion(p=0.5, distort_limit=2, shift_limit=0.5),
-    ]
-    if not use_resized_dataset:
-        train_transform = train_transform.append(albu.Resize(320, 640))
+        ]
     return albu.Compose(train_transform)
 
 
@@ -51,8 +46,6 @@ def get_validation_augmentation(use_resized_dataset=False):
     """Add paddings to make image shape divisible by 32"""
     test_transform = [
     ]
-    if not use_resized_dataset:
-        test_transform.append(albu.Resize(320, 640))
     return albu.Compose(test_transform)
 
 
