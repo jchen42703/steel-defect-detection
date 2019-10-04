@@ -10,6 +10,7 @@ from catalyst.dl import utils
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
+from pathlib import Path
 
 from steel.io.dataset import SteelDataset
 from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df, seed_everything
@@ -69,13 +70,21 @@ def main(args):
     criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     runner = SupervisedRunner()
 
+    callbacks_list = [DiceCallback(), EarlyStoppingCallback(patience=5, min_delta=0.001),]
+    if args.checkpoint_path != "None": # hacky way to say no checkpoint callback but eh what the heck
+        ckpoint_p = Path(args.checkpoint_path)
+        fname = ckpoint_p.name
+        resume_dir = str(ckpoint_p.parents[0]) # everything in the path besides the base file name
+        print(f"Loading {fname} from {resume_dir}. Checkpoints will also be saved in {resume_dir}.")
+        callbacks_list = callbacks_list + [CheckpointCallback(resume=fname, resume_dir=resume_dir),]
+
     runner.train(
         model=model,
         criterion=criterion,
         optimizer=optimizer,
         scheduler=scheduler,
         loaders=loaders,
-        callbacks=[DiceCallback(), EarlyStoppingCallback(patience=5, min_delta=0.001)],
+        callbacks=callbacks_list,
         logdir=logdir,
         num_epochs=args.num_epochs,
         verbose=True
@@ -124,6 +133,8 @@ if __name__ == "__main__":
                         help="Number of workers for data loaders.")
     parser.add_argument("--attention_type", type=str, required=False, default="scse",
                         help="Attention type; if you want None, just put the string None.")
+    parser.add_argument("--checkpoint_path", type=str, required=False, default="None",
+                        help="Checkpoint path; if you want to train from scratch, just put the string as None.")
     args = parser.parse_args()
 
     main(args)
