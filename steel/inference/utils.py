@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import torch
 
 def mask2rle(img):
     '''
@@ -39,3 +40,18 @@ def sigmoid(x):
         np.ndarray with the same shape as x, with probabilities from 0-1
     """
     return 1 / (1 + np.exp(-x))
+
+def load_weights_infer(checkpoint_path, model):
+    """
+    Loads pytorch model from a checkpoint and into inference mode.
+
+    Args:
+        checkpoint_path (str): path to a .pt or .pth checkpoint
+        model (torch.nn.Module): <-
+    Returns:
+        Model with loaded weights and in evaluation mode
+    """
+    state_dict = torch.load(checkpoint_path, map_location="cpu")["model_state_dict"]
+    model.load_state_dict(state_dict, strict=True)
+    model.eval()
+    return model

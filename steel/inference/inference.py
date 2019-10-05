@@ -65,18 +65,3 @@ def get_classification_predictions(loaders, model, class_params):
             predictions = predictions + predict.flatten().tolist()
             image_id += 1
     return predictions
-
-def load_weights_infer(checkpoint_path, model):
-    """
-    Loads pytorch model from a checkpoint and into inference mode.
-
-    Args:
-        checkpoint_path (str): path to a .pt or .pth checkpoint
-        model (torch.nn.Module): <-
-    Returns:
-        Model with loaded weights and in evaluation mode
-    """
-    state_dict = torch.load(checkpoint_path, map_location="cpu")["model_state_dict"]
-    model.load_state_dict(state_dict, strict=True)
-    model.eval()
-    return model
