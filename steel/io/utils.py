@@ -97,7 +97,7 @@ def post_process(probability, threshold, min_size):
     # don't remember where I saw it
     mask = cv2.threshold(probability, threshold, 1, cv2.THRESH_BINARY)[1]
     num_component, component = cv2.connectedComponents(mask.astype(np.uint8))
-    predictions = np.zeros((350, 525), np.float32)
+    predictions = np.zeros((256, 1600), np.float32)
     num = 0
     for c in range(1, num_component):
         p = (component == c)
