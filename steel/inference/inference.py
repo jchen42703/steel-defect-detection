@@ -3,7 +3,7 @@ import cv2
 import tqdm
 import torch
 
-from steel.io.utils import mask2rle, post_process, sigmoid
+from steel.inference.utils import mask2rle, post_process, sigmoid
 
 def get_encoded_pixels(loaders, model, class_params):
     """

@@ -11,7 +11,6 @@ import pickle
 from torch.utils.data import DataLoader
 
 from steel.io.dataset import SteelDataset
-from steel.io.utils import post_process, mask2rle, sigmoid
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
 from steel.inference.inference import get_encoded_pixels, load_weights_infer
 

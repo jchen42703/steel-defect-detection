@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 
 from steel.io.dataset import ClassificationSteelDataset
 from steel.models.classification_model import ResNet34
-from steel.io.utils import sigmoid
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
 from steel.inference.inference import get_classification_predictions, load_weights_infer
 
