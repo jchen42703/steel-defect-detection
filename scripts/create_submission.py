@@ -74,7 +74,7 @@ def create_submission(checkpoint_path, model, loaders, sub, class_params="defaul
         class_params (dict): with keys class: (threshold, minimum component size)
     """
     if class_params == "default":
-        class_params = {0: (0.5, 3500), 1: (0.5, 3500), 2: (0.5, 3500), 3: (0.5, 3500)}
+        class_params = {0: (0.5, 600), 1: (0.5, 600), 2: (0.5, 1000), 3: (0.5, 2000)}
     assert isinstance(class_params, dict)
 
     model = load_weights_infer(checkpoint_path, model)
