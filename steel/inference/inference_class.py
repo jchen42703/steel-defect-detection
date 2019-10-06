@@ -86,8 +86,8 @@ class Inference(object):
                     probability = probability.cpu().detach().numpy()
                     if probability.shape != (256, 1600):
                         probability = cv2.resize(probability, dsize=(1600, 256), interpolation=cv2.INTER_LINEAR)
-                    predict, num_predict = post_process(sigmoid(probability), self.class_params[image_id % 4][0],
-                                                        self.class_params[image_id % 4][1])
+                    predict, num_predict = post_process(sigmoid(probability), self.seg_class_params[image_id % 4][0],
+                                                        self.seg_class_params[image_id % 4][1])
                     if num_predict == 0:
                         encoded_pixels.append("")
                     else:
