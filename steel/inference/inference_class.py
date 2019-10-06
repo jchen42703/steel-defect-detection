@@ -38,7 +38,7 @@ class Inference(object):
         if tta_flips is not None:
             assert isinstance(tta_flips, (list, tuple)), "tta_flips must be a list-like of strings."
             print(f"TTA Ops: {tta_flips}")
-            self.tta_fn = partial(tta_flips_fn, model=model, mode=mode, flips=tta_flips)
+            self.tta_fn = partial(tta_flips_fn, model=self.model, mode=mode, flips=tta_flips)
 
     def create_sub(self, sub):
         """
