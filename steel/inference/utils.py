@@ -99,8 +99,8 @@ def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip",
     """
     with torch.no_grad():
         batch_size, spatial_dims = batch.shape[0], list(batch.shape[2:])
-        result_torch = torch.zeros([batch_size, 4] + spatial_dims),
-                                    dtype=torch.float).cuda()
+        results = torch.zeros([batch_size, 4] + spatial_dims, dtype=torch.float).cuda()
+
         num_results = 1 + len(flips)
         pred = model(batch.cuda())
         results += 1/num_results * pred
