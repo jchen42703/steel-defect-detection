@@ -41,6 +41,13 @@ def sigmoid(x):
     """
     return 1 / (1 + np.exp(-x))
 
+def get_df_histogram(df):
+    df = df.fillna("")
+    df["Image"] = df["ImageId_ClassId"].map(lambda x: x.split("_")[0])
+    df["Class"] = df["ImageId_ClassId"].map(lambda x: x.split("_")[1])
+    df["empty"] = df["EncodedPixels"].map(lambda x: not x)
+    print(df[df["empty"] == False]["Class"].value_counts())
+
 def load_weights_infer(checkpoint_path, model):
     """
     Loads pytorch model from a checkpoint and into inference mode.
