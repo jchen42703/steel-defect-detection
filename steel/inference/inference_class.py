@@ -76,7 +76,7 @@ class Inference(object):
         image_id = 0
         for i, test_batch in enumerate(tqdm.tqdm(self.loader)):
             if self.tta_fn is not None:
-                pred_out = self.tta_fn(test_batch[0].cuda())
+                pred_out = self.tta_fn(batch=test_batch[0].cuda())
             else:
                 pred_out = self.model(test_batch[0].cuda())
             # for each batch (4, h, w): resize and post_process
@@ -108,7 +108,7 @@ class Inference(object):
         predictions = []
         for i, test_batch in enumerate(tqdm.tqdm(self.loader)):
             if self.tta_fn is not None:
-                pred_out = self.tta_fn(test_batch[0].cuda())
+                pred_out = self.tta_fn(batch=test_batch[0].cuda())
             else:
                 pred_out = self.model(test_batch[0].cuda())
             # for each batch (n, 4): post process
