@@ -42,6 +42,9 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def get_df_histogram(df):
+    """
+    From: https://www.kaggle.com/lightforever/severstal-mlcomp-catalyst-infer-0-90672
+    """
     df = df.fillna("")
     df["Image"] = df["ImageId_ClassId"].map(lambda x: x.split("_")[0])
     df["Class"] = df["ImageId_ClassId"].map(lambda x: x.split("_")[1])
