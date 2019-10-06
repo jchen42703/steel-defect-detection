@@ -1,3 +1,5 @@
+import numpy as np
+
 def combine_segmentation_classification_dfs(df_segmentation, df_classification):
     """
     From: https://www.kaggle.com/bibek777/heng-s-model-inference-kernel
