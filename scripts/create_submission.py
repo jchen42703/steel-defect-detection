@@ -64,6 +64,6 @@ if __name__ == "__main__":
                         help="one of the encoders in https://github.com/qubvel/segmentation_models.pytorch")
     parser.add_argument("--checkpoint_path", type=str, required=False,
                         default="./logs/segmentation/checkpoints/best.pth",
-                        help="Path to log directory that was created when training.")
+                        help="Path to checkpoint that was created during training (must be traceable).")
     args = parser.parse_args()
     main(args)
