@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name='steel_defect_detection',
+setup(name='steel',
       version='0.01.1',
       description='Severstal: Steel Defect Detection',
       url='',
@@ -14,7 +14,14 @@ setup(name='steel_defect_detection',
             "scikit-image",
             "future",
             "pandas",
-            "albumentations",
+            "albumentations==0.3.2",
+            "torch>=1.2.0",
+            "torchvision>=0.4.0",
+            "catalyst",
+            "lz4",
+            "wandb",
+            "pytorch_toolbelt",
+            "pretrainedmodels",
       ],
       classifiers=[
           'Development Status :: 3 - Alpha',
