@@ -55,3 +55,66 @@ def load_weights_infer(checkpoint_path, model):
     model.load_state_dict(state_dict, strict=True)
     model.eval()
     return model
+
+def flip(x, dim):
+    """
+    From: https://github.com/MIC-DKFZ/nnUNet/blob/6150f1b0282daad11d4ad8d7227e68abe75e6f06/nnunet/utilities/tensor_utilities.py
+    flips the tensor at dimension dim (mirroring!)
+
+    Args:
+        x: torch tensor
+        dim: axis to flip across
+    Returns:
+        flipped torch tensor
+    """
+    indices = [slice(None)] * x.dim()
+    indices[dim] = torch.arange(x.size(dim) - 1, -1, -1,
+                                dtype=torch.long, device=x.device)
+    return x[tuple(indices)]
+
+def ud_flip(x):
+    """
+    Assumes the x has the shape: [batch, n_channels, h, w]
+    """
+    return flip(x, 2)
+
+def lr_flip(x):
+    """
+    Assumes the x has the shape: [batch, n_channels, h, w]
+    """
+    return flip(x, 3)
+
+def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip", "lrud_flip"]):
+    """
+    Inspired by: https://github.com/MIC-DKFZ/nnUNet/blob/2228cbe9e77910aaf97040790af83b8984ab9c11/nnunet/network_architecture/neural_network.py
+    Applies flip TTA with cuda.
+
+    Args:
+        model (nn.Module): model should be in evaluation mode.
+        batch (torch.Tensor): shape (batch_size, n_channels, h, w)
+        flips (list-like): consisting one of or all of ["lr_flip", "ud_flip", "lrud_flip"].
+            Defaults to ["lr_flip", "ud_flip", "lrud_flip"].
+    Returns:
+        averaged predictions
+    """
+    with torch.no_grad():
+        batch_size, spatial_dims = batch.shape[0], list(batch.shape[2:])
+        result_torch = torch.zeros([batch_size, 4] + spatial_dims),
+                                    dtype=torch.float).cuda()
+        num_results = 1 + len(flips)
+        pred = model(batch.cuda())
+        results += 1/num_results * pred
+
+        if "lr_flip" in flips:
+            pred_lr = model(lr_flip(batch).cuda())
+            if mode == "segmentation": results += 1/num_results * lr_flip(pred_lr)
+            elif mode == "classification": results += 1/num_results * pred_lr
+        elif "ud_flip" in flips:
+            pred_ud = model(ud_flip(batch).cuda())
+            if mode == "segmentation": results += 1/num_results * ud_flip(pred_ud)
+            elif mode == "classification": results += 1/num_results * pred_ud
+        elif "lrud_flip" in flips:
+            pred_lrud = model(ud_flip(lr_flip(batch)).cuda())
+            if mode == "segmentation": results += 1/num_results * ud_flip(lr_flip(pred_lrud))
+            elif mode == "classification": results += 1/num_results * pred_lrud
+    return results
