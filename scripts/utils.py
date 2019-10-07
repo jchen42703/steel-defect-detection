@@ -37,7 +37,8 @@ def setup_train_and_sub_df(path):
 def get_training_augmentation():
     train_transform = [
         albu.HorizontalFlip(p=0.5),
-        albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1, p=0.5, border_mode=0),
+        albu.VerticalFlip(p=0.5),
+        albu.ShiftScaleRotate(scale_limit=0.1, rotate_limit=0, shift_limit=0.2, p=0.5, border_mode=0),
         ]
     return albu.Compose(train_transform)
 
