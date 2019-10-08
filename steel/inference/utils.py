@@ -61,7 +61,12 @@ def load_weights_infer(checkpoint_path, model):
     Returns:
         Model with loaded weights and in evaluation mode
     """
-    state_dict = torch.load(checkpoint_path, map_location="cpu")["model_state_dict"]
+    try:
+        # catalyst weights
+        state_dict = torch.load(checkpoint_path, map_location="cpu")["model_state_dict"]
+    except:
+        # anything else
+        state_dict = torch.load(checkpoint_path, map_location="cpu")
     model.load_state_dict(state_dict, strict=True)
     model.eval()
     return model
