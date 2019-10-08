@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import torch
 
+from functools import partial
+
 def mask2rle(img):
     '''
     Convert mask to rle.
@@ -99,7 +101,36 @@ def lr_flip(x):
     """
     return flip(x, 3)
 
-def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip", "lrud_flip"]):
+def sharpen(p,t=0.5):
+        if t!=0:
+            return p**t
+        else:
+            return p
+
+def apply_nonlin(logit, non_lin="sigmoid", sharpen_t=0.5):
+    """
+    Applies non-linearity and sharpens if it's sigmoid.
+
+    Args:
+        logit (torch.Tensor): output logits from a model
+            shape: (batch_size, n_classes, h, w) or (batch_size, n_classes)
+        non_lin (str): one of [None, 'sigmoid', 'softmax']
+        sharpen_t (float): sharpen exponent for the output probabilities
+    Returns:
+        x: torch.Tensor, same shape as logit
+    """
+    if non_lin is None:
+        return logit
+    elif non_lin == "sigmoid":
+        x = torch.sigmoid(logit)
+        x = sharpen(x, sharpen_t)
+        return x
+    elif non_lin == "softmax":
+        # softmax across the channels dim
+        x = torch.softmax(logit, dim=1)
+        return x
+
+def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip", "lrud_flip"], non_lin="sigmoid"):
     """
     Inspired by: https://github.com/MIC-DKFZ/nnUNet/blob/2228cbe9e77910aaf97040790af83b8984ab9c11/nnunet/network_architecture/neural_network.py
     Applies flip TTA with cuda.
@@ -110,27 +141,28 @@ def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip",
         flips (list-like): consisting one of or all of ["lr_flip", "ud_flip", "lrud_flip"].
             Defaults to ["lr_flip", "ud_flip", "lrud_flip"].
     Returns:
-        averaged predictions
+        averaged probability predictions
     """
+    process = partial(apply_nonlin, non_lin=non_lin)
     with torch.no_grad():
         batch_size = batch.shape[0]
         spatial_dims = list(batch.shape[2:]) if mode=="segmentation" else []
         results = torch.zeros([batch_size, 4] + spatial_dims, dtype=torch.float).cuda()
 
         num_results = 1 + len(flips)
-        pred = model(batch.cuda())
+        pred = process(model(batch.cuda()), sharpen_t=0).squeeze()
         results += 1/num_results * pred
 
         if "lr_flip" in flips:
             pred_lr = model(lr_flip(batch).cuda())
-            if mode == "segmentation": results += 1/num_results * lr_flip(pred_lr)
-            elif mode == "classification": results += 1/num_results * pred_lr
+            if mode == "segmentation": results += 1/num_results * process(lr_flip(pred_lr))
+            elif mode == "classification": results += 1/num_results * process(pred_lr).squeeze()
         elif "ud_flip" in flips:
             pred_ud = model(ud_flip(batch).cuda())
-            if mode == "segmentation": results += 1/num_results * ud_flip(pred_ud)
-            elif mode == "classification": results += 1/num_results * pred_ud
+            if mode == "segmentation": results += 1/num_results * process(ud_flip(pred_ud))
+            elif mode == "classification": results += 1/num_results * process(pred_ud).squeeze()
         elif "lrud_flip" in flips:
             pred_lrud = model(ud_flip(lr_flip(batch)).cuda())
-            if mode == "segmentation": results += 1/num_results * ud_flip(lr_flip(pred_lrud))
-            elif mode == "classification": results += 1/num_results * pred_lrud
+            if mode == "segmentation": results += 1/num_results * process(ud_flip(lr_flip(pred_lrud)))
+            elif mode == "classification": results += 1/num_results * process(pred_lrud).squeeze()
     return results
