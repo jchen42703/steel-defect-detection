@@ -33,16 +33,6 @@ def post_process(probability, threshold, min_size):
             num += 1
     return predictions, num
 
-def sigmoid(x):
-    """
-    Sigmoid activation function; transforms input, x, into mutually exclusive probabilities.
-    Args:
-        x: np.ndarray, list, or tuple
-    Returns:
-        np.ndarray with the same shape as x, with probabilities from 0-1
-    """
-    return 1 / (1 + np.exp(-x))
-
 def get_df_histogram(df):
     """
     From: https://www.kaggle.com/lightforever/severstal-mlcomp-catalyst-infer-0-90672

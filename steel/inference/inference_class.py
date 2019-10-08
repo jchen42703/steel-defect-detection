@@ -8,7 +8,7 @@ import pandas as pd
 
 from functools import partial
 from torch.jit import load
-from steel.inference.utils import mask2rle, post_process, sigmoid, load_weights_infer, tta_flips_fn, apply_nonlin
+from steel.inference.utils import mask2rle, post_process, load_weights_infer, tta_flips_fn, apply_nonlin
 
 class Inference(object):
     def __init__(self, checkpoint_path, test_loader, test_dataset, model=None, mode="segmentation", tta_flips=None):
@@ -110,7 +110,7 @@ class Inference(object):
             if self.tta_fn is not None:
                 pred_out = self.tta_fn(batch=test_batch[0].cuda())
             else:
-                pred_out = apply_nonlin(self.model(test_batch[0].cuda()), sharpen_t=0)                
+                pred_out = apply_nonlin(self.model(test_batch[0].cuda()), sharpen_t=0)
             # for each batch (n, 4): post process
             for i, batch in enumerate(pred_out):
                 # iterating through each prediction (4,)
