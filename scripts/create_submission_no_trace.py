@@ -11,6 +11,7 @@ import pickle
 from torch.utils.data import DataLoader
 
 from steel.models.classification_model import ResNet34
+from steel.models.heng_classification_model import Resnet34_classification
 from steel.io.dataset import SteelDataset, ClassificationSteelDataset
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
 from steel.inference.inference_class import Inference
@@ -53,7 +54,10 @@ def main(args):
                                                   transforms=get_validation_augmentation(),
                                                   preprocessing=get_preprocessing(preprocessing_fn)
                                                  )
-        model = ResNet34(pre=None, num_classes=4, use_simple_head=True)
+        if args.classification_model.lower() == "regular":
+            model = ResNet34(pre=None, num_classes=4, use_simple_head=True)
+        elif args.classification_model.lower() == "heng":
+            model = Resnet34_classification(num_class=4)
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
     infer = Inference(args.checkpoint_path, test_loader, test_dataset, model=model, mode=args.mode, tta_flips=["lr_flip",])
@@ -67,6 +71,8 @@ if __name__ == "__main__":
                         help="Path to the unzipped kaggle dataset directory.")
     parser.add_argument("--mode", type=str, required=True,
                         help="Either 'segmentation' or 'classification'")
+    parser.add_argument("--classification_model", type=str, required=False, default="regular",
+                        help="Either 'regular' or 'heng'")
     parser.add_argument("--batch_size", type=int, required=False, default=8,
                         help="Batch size")
     parser.add_argument("--encoder", type=str, required=False, default="resnet50",
