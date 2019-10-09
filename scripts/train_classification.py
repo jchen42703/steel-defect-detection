@@ -3,7 +3,7 @@ import torch
 import pandas as pd
 import segmentation_models_pytorch as smp
 
-from catalyst.dl.callbacks import DiceCallback, EarlyStoppingCallback, InferCallback, CheckpointCallback
+from catalyst.dl.callbacks import DiceCallback, AccuracyCallback, EarlyStoppingCallback, InferCallback, CheckpointCallback
 from catalyst.dl.runner import SupervisedRunner
 from catalyst.dl import utils
 
@@ -37,7 +37,8 @@ def main(args):
     # setting up the classification model
     ENCODER_WEIGHTS = "imagenet"
     DEVICE = "cuda"
-    model = ResNet34(pre=ENCODER_WEIGHTS, num_classes=4, use_simple_head=True)
+
+    model = ResNet34(pre=ENCODER_WEIGHTS, num_classes=4, use_simple_head=True, dropout_p=args.dropout_p)
 
     preprocessing_fn = smp.encoders.get_preprocessing_fn("resnet34", ENCODER_WEIGHTS)
 
@@ -66,16 +67,21 @@ def main(args):
     # model, criterion, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.15, patience=2)
-    criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
+    if args.loss == "bce_dice_loss":
+        criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
+    elif args.loss == "bce":
+        criterion = torch.nn.BCEWithLogitsLoss()
     runner = SupervisedRunner()
 
+    callbacks_list = [DiceCallback(), EarlyStoppingCallback(patience=5, min_delta=0.001),
+                      AccuracyCallback(threshold=0.5, activation="Sigmoid")]
     runner.train(
         model=model,
         criterion=criterion,
         optimizer=optimizer,
         scheduler=scheduler,
         loaders=loaders,
-        callbacks=[DiceCallback(), EarlyStoppingCallback(patience=5, min_delta=0.001)],
+        callbacks=callbacks_list,
         logdir=logdir,
         num_epochs=args.num_epochs,
         verbose=True
@@ -104,6 +110,10 @@ if __name__ == "__main__":
                         help="Seed for the train/val dataset split")
     parser.add_argument("--num_workers", type=int, required=False, default=2,
                         help="Number of workers for data loaders.")
+    parser.add_argument("--loss", type=str, required=False, default="bce",
+                        help="Either bce_dice_loss or bce")
+    parser.add_argument("--dropout_p", type=float, required=False, default=0.5,
+                        help="Dropout probability before the final classification head.")
     args = parser.parse_args()
 
     main(args)
