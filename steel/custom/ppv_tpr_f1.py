@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 import torch
 
-from steel.custom.precisionrecallf1scoremeter import PrecisionRecallF1ScoreMeter
+from steel.custom.ppv_tpr_f1_meter import PrecisionRecallF1ScoreMeter
 from catalyst.dl.core import Callback, RunnerState, CallbackOrder
 
 class PrecisionRecallF1ScoreCallback(Callback):
