@@ -3,7 +3,7 @@ import torch
 import pandas as pd
 import segmentation_models_pytorch as smp
 
-from catalyst.dl.callbacks import DiceCallback, AccuracyCallback, EarlyStoppingCallback, InferCallback, CheckpointCallback
+from catalyst.dl.callbacks import DiceCallback, AccuracyCallback, EarlyStoppingCallback, CheckpointCallback
 from catalyst.dl.runner import SupervisedRunner
 from catalyst.dl import utils
 
@@ -78,6 +78,13 @@ def main(args):
                       EarlyStoppingCallback(patience=5, min_delta=0.001),
                       AccuracyCallback(threshold=0.5, activation="Sigmoid"),
                       ]
+    if args.checkpoint_path != "None": # hacky way to say no checkpoint callback but eh what the heck
+        ckpoint_p = Path(args.checkpoint_path)
+        fname = ckpoint_p.name
+        resume_dir = str(ckpoint_p.parents[0]) # everything in the path besides the base file name
+        print(f"Loading {fname} from {resume_dir}. Checkpoints will also be saved in {resume_dir}.")
+        callbacks_list = callbacks_list + [CheckpointCallback(resume=fname, resume_dir=resume_dir),]
+
     runner.train(
         model=model,
         criterion=criterion,
@@ -99,8 +106,6 @@ if __name__ == "__main__":
     import argparse
     # parsing the arguments from the command prompt
     parser = argparse.ArgumentParser(description="For training.")
-    # parser.add_argument("--log_dir", type=str, required=True,
-    #                     help="Path to the base directory where logs and weights are saved")
     parser.add_argument("--dset_path", type=str, required=True,
                         help="Path to the unzipped kaggle dataset directory.")
     parser.add_argument("--num_epochs", type=int, required=False, default=21,
@@ -119,6 +124,8 @@ if __name__ == "__main__":
                         help="Learning rate.")
     parser.add_argument("--dropout_p", type=float, required=False, default=0.5,
                         help="Dropout probability before the final classification head.")
+    parser.add_argument("--checkpoint_path", type=str, required=False, default="None",
+                        help="Checkpoint path; if you want to train from scratch, just put the string as None.")
     args = parser.parse_args()
 
     main(args)
