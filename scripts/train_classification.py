@@ -66,7 +66,7 @@ def main(args):
     logdir = "./logs/segmentation"
 
     # model, criterion, optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.15, patience=2)
     if args.loss == "bce_dice_loss":
         criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
@@ -115,6 +115,8 @@ if __name__ == "__main__":
                         help="Number of workers for data loaders.")
     parser.add_argument("--loss", type=str, required=False, default="bce",
                         help="Either bce_dice_loss or bce")
+    parser.add_argument("--lr", type=float, required=False, default=3e-4,
+                        help="Learning rate.")
     parser.add_argument("--dropout_p", type=float, required=False, default=0.5,
                         help="Dropout probability before the final classification head.")
     args = parser.parse_args()
