@@ -4,7 +4,7 @@ from torchvision.models import resnet34
 from .model_utils import ClassificationHeadResNet
 
 class ResNet34(nn.Module):
-    def __init__(self, pre=True, num_classes=4, use_simple_head=True):
+    def __init__(self, pre=True, num_classes=4, use_simple_head=True, dropout_p=0.5):
         super().__init__()
         encoder = resnet34(pretrained=pre)
 
@@ -17,6 +17,7 @@ class ResNet34(nn.Module):
         self.layer2 = encoder.layer2
         self.layer3 = encoder.layer3
         self.layer4 = encoder.layer4
+        self.dropout = nn.Dropout(p=dropout_p) if dropout_p > 0 else None
         self.head = ClassificationHeadResNet(num_classes, use_simple_head=use_simple_head)
 
     def forward(self, x):
@@ -25,6 +26,8 @@ class ResNet34(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
         x = self.head(x)
         return x
 
