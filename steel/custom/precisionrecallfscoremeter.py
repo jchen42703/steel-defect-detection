@@ -3,7 +3,7 @@ import numbers
 import numpy as np
 import torch
 
-from catalyst.meters import meter
+from catalyst.dl.meters import meter
 from collections import defaultdict
 
 class PrecisionRecallFScoreMeter(meter.Meter):
@@ -36,21 +36,21 @@ class PrecisionRecallFScoreMeter(meter.Meter):
         assert np.all(np.add(np.equal(target, 1), np.equal(target, 0))), \
             "targets should be binary (0, 1)"
 
-        output = (output > self.threshold).float()
+        output = (output > self.threshold).astype(np.int32)
 
-        tp = torch.sum(target * output)
-        fp = torch.sum(output) - true_positive
-        fn = torch.sum(target) - true_positive
+        tp = np.sum(target * output)
+        fp = np.sum(output) - tp
+        fn = np.sum(target) - tp
 
         self.tp_fp_fn_counts["tp"] += tp
         self.tp_fp_fn_counts["fp"] += fp
         self.tp_fp_fn_counts["fn"] += fn
 
     def value(self):
-        precision_value = float(precision(self.tp_fp_fn_counts["tp"], self.tp_fp_fn_counts["fp"], eps=eps))
-        recall_value = float(recall(self.tp_fp_fn_counts["tp"], self.tp_fp_fn_counts["fn"], eps=eps)))
-        f1_value = float(f1score(precision_value, recall_value, eps=eps))
-        return (precision_value, recall_value, f1score_value)
+        precision_value = float(precision(self.tp_fp_fn_counts["tp"], self.tp_fp_fn_counts["fp"]))
+        recall_value = float(recall(self.tp_fp_fn_counts["tp"], self.tp_fp_fn_counts["fn"]))
+        f1_value = float(f1score(precision_value, recall_value))
+        return (precision_value, recall_value, f1_value)
 
 def f1score(precision_value, recall_value, eps=1e-5):
     """
