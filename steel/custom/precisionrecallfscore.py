@@ -4,10 +4,14 @@ from collections import defaultdict
 import numpy as np
 import torch
 
-from steel.custom.precisionrecallfscore import PrecisionRecallFScoreMeter
+from steel.custom.precisionrecallfscoremeter import PrecisionRecallFScoreMeter
 from catalyst.dl.core import Callback, RunnerState, CallbackOrder
 
 class PrecisionRecallFScoreCallback(Callback):
+    """
+    Calculates the global precision, recall, and fscore per class for each loader.
+    Currently, supports binary and multi-label cases.
+    """
     def __init__(
         self,
         input_key: str = "targets",
@@ -17,7 +21,6 @@ class PrecisionRecallFScoreCallback(Callback):
         threshold: float = 0.5
     ):
         super().__init__(CallbackOrder.Metric)
-        self.prefix = prefix
         self.input_key = input_key
         self.output_key = output_key
 
