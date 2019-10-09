@@ -5,8 +5,8 @@ import segmentation_models_pytorch as smp
 
 from catalyst.dl.callbacks import DiceCallback, AccuracyCallback, EarlyStoppingCallback, CheckpointCallback
 from catalyst.dl.runner import SupervisedRunner
-from catalyst.dl import utils
 
+from pathlib import Path
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
@@ -95,11 +95,6 @@ def main(args):
         logdir=logdir,
         num_epochs=args.num_epochs,
         verbose=True
-    )
-    utils.plot_metrics(
-        logdir=logdir,
-        # specify which metrics we want to plot
-        metrics=["loss", "dice", "lr", "_base/lr"]
     )
 
 if __name__ == "__main__":
