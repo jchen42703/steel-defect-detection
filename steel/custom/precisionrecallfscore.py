@@ -9,7 +9,8 @@ from catalyst.dl.core import Callback, RunnerState, CallbackOrder
 
 class PrecisionRecallFScoreCallback(Callback):
     """
-    Calculates the global precision, recall, and fscore per class for each loader.
+    Calculates the global precision (a.k.a. positive predictive value or ppv), 
+    recall (a.k.a. true positive rate or tpr), and fscore per class for each loader.
     Currently, supports binary and multi-label cases.
     """
     def __init__(
@@ -24,7 +25,7 @@ class PrecisionRecallFScoreCallback(Callback):
         self.input_key = input_key
         self.output_key = output_key
 
-        self.list_args = ["precision", "recall", "fscore"]
+        self.list_args = ["ppv", "tpr", "fscore"]
         self.class_names = class_names
         self.num_classes = num_classes \
             if class_names is None \
