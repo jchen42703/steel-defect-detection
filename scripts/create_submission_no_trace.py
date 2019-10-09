@@ -55,7 +55,7 @@ def main(args):
                                                   preprocessing=get_preprocessing(preprocessing_fn)
                                                  )
         if args.classification_model.lower() == "regular":
-            model = ResNet34(pre=None, num_classes=4, use_simple_head=True)
+            model = ResNet34(pre=None, num_classes=4, use_simple_head=True, dropout_p=args.dropout_p)
         elif args.classification_model.lower() == "heng":
             model = Resnet34_classification(num_class=4)
 
@@ -80,5 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint_path", type=str, required=False,
                         default="./logs/segmentation/checkpoints/best.pth",
                         help="Path to checkpoint that was created during training")
+    parser.add_argument("--dropout_p", type=float, required=False, default=0.5,
+                        help="Dropout probability before the final classification head.")
     args = parser.parse_args()
     main(args)
