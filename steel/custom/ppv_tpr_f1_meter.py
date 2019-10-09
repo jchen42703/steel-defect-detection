@@ -6,14 +6,14 @@ import torch
 from catalyst.dl.meters import meter
 from collections import defaultdict
 
-class PrecisionRecallFScoreMeter(meter.Meter):
+class PrecisionRecallF1ScoreMeter(meter.Meter):
     """
     Keeps track of global true positives, false positives, and false negatives for each epoch
-    and calculates precision, recall, and fscore based on those metrics.
+    and calculates precision, recall, and F1-score based on those metrics.
     Currently, for binary cases only (use multiple instances for multi-label).
     """
     def __init__(self, threshold=0.5):
-        super(PrecisionRecallFScoreMeter, self).__init__()
+        super(PrecisionRecallF1ScoreMeter, self).__init__()
         self.threshold = threshold
         self.reset()
 
@@ -85,4 +85,4 @@ def recall(tp, fn, eps=1e-5):
     """
     return tp / (tp + fn + eps)
 
-__all__ = ["PrecisionRecallFScoreMeter"]
+__all__ = ["PrecisionRecallF1ScoreMeter"]

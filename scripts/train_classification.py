@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingL
 
 from steel.io.dataset import ClassificationSteelDataset
 from steel.models.classification_model import ResNet34
-from steel.custom.precisionrecallfscore import PrecisionRecallFScoreCallback
+from steel.custom.ppv_tpr_f1 import PrecisionRecallF1ScoreCallback
 from utils import get_preprocessing, get_training_augmentation, get_validation_augmentation, setup_train_and_sub_df, seed_everything
 
 def main(args):
@@ -74,7 +74,7 @@ def main(args):
         criterion = torch.nn.BCEWithLogitsLoss()
     runner = SupervisedRunner()
 
-    callbacks_list = [PrecisionRecallFScoreCallback(num_classes=4),#DiceCallback(),
+    callbacks_list = [PrecisionRecallF1ScoreCallback(num_classes=4),#DiceCallback(),
                       EarlyStoppingCallback(patience=5, min_delta=0.001),
                       AccuracyCallback(threshold=0.5, activation="Sigmoid"),
                       ]

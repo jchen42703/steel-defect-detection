@@ -4,13 +4,13 @@ from collections import defaultdict
 import numpy as np
 import torch
 
-from steel.custom.precisionrecallfscoremeter import PrecisionRecallFScoreMeter
+from steel.custom.precisionrecallf1scoremeter import PrecisionRecallF1ScoreMeter
 from catalyst.dl.core import Callback, RunnerState, CallbackOrder
 
-class PrecisionRecallFScoreCallback(Callback):
+class PrecisionRecallF1ScoreCallback(Callback):
     """
-    Calculates the global precision (a.k.a. positive predictive value or ppv), 
-    recall (a.k.a. true positive rate or tpr), and fscore per class for each loader.
+    Calculates the global precision (positive predictive value or ppv),
+    recall (true positive rate or tpr), and F1-score per class for each loader.
     Currently, supports binary and multi-label cases.
     """
     def __init__(
@@ -25,7 +25,7 @@ class PrecisionRecallFScoreCallback(Callback):
         self.input_key = input_key
         self.output_key = output_key
 
-        self.list_args = ["ppv", "tpr", "fscore"]
+        self.list_args = ["ppv", "tpr", "f1-score"]
         self.class_names = class_names
         self.num_classes = num_classes \
             if class_names is None \
@@ -33,7 +33,7 @@ class PrecisionRecallFScoreCallback(Callback):
 
         assert self.num_classes is not None
 
-        self.meters = [PrecisionRecallFScoreMeter(threshold) for _ in range(self.num_classes)]
+        self.meters = [PrecisionRecallF1ScoreMeter(threshold) for _ in range(self.num_classes)]
 
     def _reset_stats(self):
         for meter in self.meters:
@@ -54,23 +54,23 @@ class PrecisionRecallFScoreCallback(Callback):
                 self.meters[i].add(probabilities[:, i], targets[:, i])
 
     def on_loader_end(self, state: RunnerState):
-        prec_recall_fscore = defaultdict(list)
+        prec_recall_f1score = defaultdict(list)
         for i, meter in enumerate(self.meters):
             metrics = meter.value()
             postfix = self.class_names[i] \
                 if self.class_names is not None \
                 else str(i)
             for prefix, metric_ in zip(self.list_args, metrics):
-                prec_recall_fscore[prefix] = metric_
+                prec_recall_f1score[prefix] = metric_
                 metric_name = f"{prefix}/class_{postfix}"
                 state.metrics.epoch_values[state.loader_name][metric_name] = metric_
 
         for prefix in self.list_args:
-            mean_value = float(np.mean(prec_recall_fscore[prefix]))
+            mean_value = float(np.mean(prec_recall_f1score[prefix]))
             metric_name = f"{prefix}/_mean"
             state.metrics.epoch_values[state.loader_name][metric_name] = mean_value
 
         self._reset_stats()
 
 
-__all__ = ["PrecisionRecallFScoreCallback"]
+__all__ = ["PrecisionRecallF1ScoreCallback"]
