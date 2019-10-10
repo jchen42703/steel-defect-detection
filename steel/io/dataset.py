@@ -1,5 +1,5 @@
 import albumentations as albu
-from albumentations import torch as AT
+from albumentations import pytorch as AT
 
 import pandas as pd
 import numpy as np
