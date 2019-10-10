@@ -61,7 +61,7 @@ class PrecisionRecallF1ScoreCallback(Callback):
                 if self.class_names is not None \
                 else str(i)
             for prefix, metric_ in zip(self.list_args, metrics):
-                prec_recall_f1score[prefix] = metric_
+                prec_recall_f1score[prefix].append(metric_)
                 metric_name = f"{prefix}/class_{postfix}"
                 state.metrics.epoch_values[state.loader_name][metric_name] = metric_
 
