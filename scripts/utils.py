@@ -91,7 +91,7 @@ def get_preprocessing(preprocessing_fn):
     ]
     return albu.Compose(_transform)
 
-def do_random_log_contrast(image):
+def do_random_log_contrast(image, **kwargs):
     gain = np.random.uniform(0.70,1.30,1)
     inverse = np.random.choice(2,1)
 
@@ -104,7 +104,7 @@ def do_random_log_contrast(image):
     image = np.clip(image*255, 0, 255).astype(np.uint8)
     return image
 
-def do_noise(image, noise=8):
+def do_noise(image, noise=8, **kwargs):
     H,W = image.shape[:2]
     image = image + np.random.uniform(-1, 1, (H, W, 1))*noise
     image = np.clip(image, 0, 255).astype(np.uint8)
