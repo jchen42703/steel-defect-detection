@@ -34,16 +34,35 @@ def setup_train_and_sub_df(path):
     reset_index().rename(columns={"index": "im_id", "ImageId_ClassId": "count"})
     return (train, sub, id_mask_count)
 
-def get_training_augmentation():
-    train_transform = [
-        albu.HorizontalFlip(p=0.5),
-        albu.VerticalFlip(p=0.5),
-        albu.ShiftScaleRotate(scale_limit=0.1, rotate_limit=0, shift_limit=0.2, p=0.5, border_mode=0),
-        ]
+def get_training_augmentation(augmentation_key="aug3"):
+    transform_dict = {
+                      "aug1": [
+                                albu.HorizontalFlip(p=0.5),
+                                albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1, p=0.5, border_mode=0),
+                                albu.GridDistortion(p=0.5),
+                                albu.OpticalDistortion(p=0.5, distort_limit=2, shift_limit=0.5),
+	                          ],
+                      "aug1.5": [
+                                albu.HorizontalFlip(p=0.5),
+                                albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1, p=0.5, border_mode=0),
+                              ],
+                      "aug2": [
+                                albu.HorizontalFlip(p=0.5),
+                                albu.VerticalFlip(p=0.5),
+                                albu.ShiftScaleRotate(scale_limit=0.1, rotate_limit=0, shift_limit=0.2, p=0.5, border_mode=0),
+                              ],
+                      "aug3": [
+                                albu.HorizontalFlip(p=0.5),
+                                albu.VerticalFlip(p=0.5),
+                                albu.ShiftScaleRotate(scale_limit=0.1, rotate_limit=0, shift_limit=0.5, p=0.5, border_mode=0),
+                                albu.RandomResizedCrop(height=256, width=1600, scale=(1.0, 0.9), ratio=(0.75, 1.33), p=0.3)
+                              ]
+                     }
+    train_transform = transform_dict[augmentation_key]
     return albu.Compose(train_transform)
 
 
-def get_validation_augmentation(use_resized_dataset=False):
+def get_validation_augmentation():
     """Add paddings to make image shape divisible by 32"""
     test_transform = [
     ]
