@@ -59,6 +59,7 @@ class Inference(object):
             encoded_pixels = self.get_classification_predictions()
         # Saving the submission dataframe
         sub["EncodedPixels"] = encoded_pixels
+        sub.fillna("")
         sub.to_csv(save_path, columns=["ImageId_ClassId", "EncodedPixels"], index=False)
         print(f"Saved the submission file at {save_path}")
         return sub
