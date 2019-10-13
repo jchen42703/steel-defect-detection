@@ -62,7 +62,11 @@ def main(args):
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
     if isinstance(args.tta, str):
         # handles both the "None" case and the single TTA op case
-        args.tta = None if args.tta == "None" else [args.tta]
+        # --tta="None" or --tta="..."
+        args.tta = [] if args.tta == "None" else [args.tta]
+    elif args.tta == ["None"]:
+        # handles case where --tta "None"
+        args.tta = []
     infer = Inference(args.checkpoint_path, test_loader, test_dataset, model=model, mode=args.mode, tta_flips=args.tta)
     out_df = infer.create_sub(sub=sub)
 
