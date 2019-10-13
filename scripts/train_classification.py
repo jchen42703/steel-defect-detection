@@ -66,8 +66,13 @@ def main(args):
     logdir = "./logs/segmentation"
 
     # model, criterion, optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    if args.opt.lower() == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    elif args.opt.lower() == "sgd":
+        optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), \
+                                    lr=args.lr, momentum=0.9, weight_decay=0.0001)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.15, patience=2)
+
     if args.loss == "bce_dice_loss":
         criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     elif args.loss == "bce":
@@ -121,6 +126,8 @@ if __name__ == "__main__":
                         help="Dropout probability before the final classification head.")
     parser.add_argument("--checkpoint_path", type=str, required=False, default="None",
                         help="Checkpoint path; if you want to train from scratch, just put the string as None.")
+    parser.add_argument("--opt", nargs="+", type=str, required=False, default="adam",
+                        help="Optimizer")
     args = parser.parse_args()
 
     main(args)
