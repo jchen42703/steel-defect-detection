@@ -47,7 +47,10 @@ def main(args):
                                                  )
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
-    infer = Inference(args.checkpoint_path, test_loader, test_dataset, mode=args.mode, tta_flips=["lr_flip",])
+    if isinstance(args.tta, str):
+        # handles both the "None" case and the single TTA op case
+        args.tta = None if args.tta == "None" else [args.tta]
+    infer = Inference(args.checkpoint_path, test_loader, test_dataset, mode=args.mode, tta_flips=args.tta)
     out_df = infer.create_sub(sub=sub)
 
 if __name__ == "__main__":
@@ -65,5 +68,9 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint_path", type=str, required=False,
                         default="./logs/segmentation/checkpoints/best.pth",
                         help="Path to checkpoint that was created during training (must be traceable).")
+    parser.add_argument("--tta", nargs="+", type=str, required=False,
+                        default="lr_flip",
+                        help="Test time augmentation (lr_flip, ud_flip, and/or \
+                        lrud_flip)")
     args = parser.parse_args()
     main(args)

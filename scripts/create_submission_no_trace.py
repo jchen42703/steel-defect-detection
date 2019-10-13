@@ -60,7 +60,10 @@ def main(args):
             model = Resnet34_classification(num_class=4)
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
-    infer = Inference(args.checkpoint_path, test_loader, test_dataset, model=model, mode=args.mode, tta_flips=["lr_flip",])
+    if isinstance(args.tta, str):
+        # handles both the "None" case and the single TTA op case
+        args.tta = None if args.tta == "None" else [args.tta]
+    infer = Inference(args.checkpoint_path, test_loader, test_dataset, model=model, mode=args.mode, tta_flips=args.tta)
     out_df = infer.create_sub(sub=sub)
 
 if __name__ == "__main__":
@@ -82,5 +85,9 @@ if __name__ == "__main__":
                         help="Path to checkpoint that was created during training")
     parser.add_argument("--dropout_p", type=float, required=False, default=0.5,
                         help="Dropout probability before the final classification head.")
+    parser.add_argument("--tta", nargs="+", type=str, required=False,
+                        default="lr_flip",
+                        help="Test time augmentation (lr_flip, ud_flip, and/or \
+                        lrud_flip). Make sure to divide the flips with spaces.")
     args = parser.parse_args()
     main(args)
