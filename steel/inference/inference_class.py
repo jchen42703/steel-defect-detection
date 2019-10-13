@@ -122,7 +122,7 @@ class Inference(object):
                     if element == 0:
                         return ""
                     else:
-                        return str(element)
+                        return "1 1"
                 predict = list(map(process, predict.flatten().tolist()))
                 predictions = predictions + predict
         return predictions
