@@ -34,7 +34,7 @@ def setup_train_and_sub_df(path):
     reset_index().rename(columns={"index": "im_id", "ImageId_ClassId": "count"})
     return (train, sub, id_mask_count)
 
-def get_training_augmentation(augmentation_key="aug4"):
+def get_training_augmentation(augmentation_key="aug5"):
     transform_dict = {
                       "aug1": [
                                 albu.HorizontalFlip(p=0.5),
@@ -64,7 +64,18 @@ def get_training_augmentation(augmentation_key="aug4"):
                                 albu.RandomResizedCrop(height=256, width=1600, scale=(1.0, 0.9), ratio=(0.75, 1.33), p=0.3),
                                 albu.Lambda(image=do_random_log_contrast, p=0.5),
                                 albu.Lambda(image=do_noise, p=0.5),
-                      ]
+                              ],
+                      "aug5": [
+                                albu.HorizontalFlip(p=0.5),
+                                albu.VerticalFlip(p=0.5),
+                                albu.ShiftScaleRotate(scale_limit=0.1, rotate_limit=0, shift_limit=0.5, p=0.5, border_mode=0),
+                                albu.OneOf([
+                                            albu.RandomResizedCrop(height=256, width=1600, scale=(1.0, 0.9), ratio=(0.75, 1.33)),
+                                            albu.RandomCrop(height=256, width=1600)
+                                           ], p=0.3),
+                                albu.Lambda(image=do_random_log_contrast, p=0.5),
+                                albu.Lambda(image=do_noise, p=0.5),
+                              ]
                      }
     train_transform = transform_dict[augmentation_key]
     return albu.Compose(train_transform)
