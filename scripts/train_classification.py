@@ -126,7 +126,7 @@ if __name__ == "__main__":
                         help="Dropout probability before the final classification head.")
     parser.add_argument("--checkpoint_path", type=str, required=False, default="None",
                         help="Checkpoint path; if you want to train from scratch, just put the string as None.")
-    parser.add_argument("--opt", nargs="+", type=str, required=False, default="adam",
+    parser.add_argument("--opt", type=str, required=False, default="adam",
                         help="Optimizer")
     args = parser.parse_args()
 
