@@ -88,11 +88,16 @@ def main(args):
                       AccuracyCallback(threshold=0.5, activation="Sigmoid"),
                       ]
     if args.checkpoint_path != "None": # hacky way to say no checkpoint callback but eh what the heck
-        ckpoint_p = Path(args.checkpoint_path)
-        fname = ckpoint_p.name
-        resume_dir = str(ckpoint_p.parents[0]) # everything in the path besides the base file name
-        print(f"Loading {fname} from {resume_dir}. Checkpoints will also be saved in {resume_dir}.")
-        callbacks_list = callbacks_list + [CheckpointCallback(resume=fname, resume_dir=resume_dir),]
+        if args.checkpoint_mode.lower() == "full":
+            print("Stateful loading...")
+            ckpoint_p = Path(args.checkpoint_path)
+            fname = ckpoint_p.name
+            resume_dir = str(ckpoint_p.parents[0]) # everything in the path besides the base file name
+            print(f"Loading {fname} from {resume_dir}. Checkpoints will also be saved in {resume_dir}.")
+            callbacks_list = callbacks_list + [CheckpointCallback(resume=fname, resume_dir=resume_dir),]
+        elif args.checkpoint_mode.lower() == "model_only":
+            print("Loading weights into model...")
+            model = load_weights_train(args.checkpoint_path, model)
 
     runner.train(
         model=model,
@@ -105,6 +110,26 @@ def main(args):
         num_epochs=args.num_epochs,
         verbose=True
     )
+
+def load_weights_train(checkpoint_path, model):
+    """
+    Loads pytorch model from a checkpoint and into inference mode.
+
+    Args:
+        checkpoint_path (str): path to a .pt or .pth checkpoint
+        model (torch.nn.Module): <-
+    Returns:
+        Model with loaded weights and in evaluation mode
+    """
+    try:
+        # catalyst weights
+        state_dict = torch.load(checkpoint_path, map_location="cpu")["model_state_dict"]
+    except:
+        # anything else
+        state_dict = torch.load(checkpoint_path, map_location="cpu")
+    model.load_state_dict(state_dict, strict=True)
+    model.train()
+    return model
 
 if __name__ == "__main__":
     import argparse
@@ -132,6 +157,8 @@ if __name__ == "__main__":
                         help="Dropout probability before the final classification head.")
     parser.add_argument("--checkpoint_path", type=str, required=False, default="None",
                         help="Checkpoint path; if you want to train from scratch, just put the string as None.")
+    parser.add_argument("--checkpoint_mode", type=str, required=False, default="full",
+                        help="'full' for stateful loading or 'model_only' for just loading weights.")
     parser.add_argument("--opt", type=str, required=False, default="adam",
                         help="Optimizer")
     parser.add_argument("--aug_key", type=str, required=False, default="aug4",
