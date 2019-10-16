@@ -33,8 +33,12 @@ def main(args):
     train, sub, id_mask_count = setup_train_and_sub_df(args.dset_path)
     # setting up the train/val split with filenames
     seed_everything(args.split_seed)
-    train_ids, valid_ids = train_test_split(id_mask_count["im_id"].values, random_state=args.split_seed,
-                                            stratify=id_mask_count["count"], test_size=args.test_size)
+    if args.df_setup_type == "pos_only":
+        train_ids, valid_ids = train_test_split(id_mask_count["im_id"].values, random_state=args.split_seed,
+                                                stratify=id_mask_count["count"], test_size=args.test_size)
+    elif args.df_setup_type == "regular":
+        train_ids, valid_ids = train_test_split(train["im_id"].drop_duplicates().values, random_state=args.split_seed,
+                                                test_size=args.test_size)
     # setting up the classification model
     ENCODER_WEIGHTS = "imagenet"
     DEVICE = "cuda"
@@ -112,6 +116,8 @@ if __name__ == "__main__":
                         help="Number of epochs")
     parser.add_argument("--batch_size", type=int, required=False, default=16,
                         help="Batch size")
+    parser.add_argument("--df_setup_type", type=str, required=False, default="regular",
+                        help="`regular` or `pos_only` for how the ids are set up.")
     parser.add_argument("--test_size", type=float, required=False, default=0.1,
                         help="Fraction of total dataset to make the validation set.")
     parser.add_argument("--split_seed", type=int, required=False, default=42,
