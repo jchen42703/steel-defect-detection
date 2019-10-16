@@ -50,7 +50,7 @@ def main(args):
     # Setting up the I/O
     train_dataset = ClassificationSteelDataset(
                                                 args.dset_path, df=train, datatype="train", im_ids=train_ids,
-                                                transforms=get_training_augmentation(),
+                                                transforms=get_training_augmentation(args.aug_key),
                                                 preprocessing=get_preprocessing(preprocessing_fn),
                                                )
     valid_dataset = ClassificationSteelDataset(
@@ -134,6 +134,8 @@ if __name__ == "__main__":
                         help="Checkpoint path; if you want to train from scratch, just put the string as None.")
     parser.add_argument("--opt", type=str, required=False, default="adam",
                         help="Optimizer")
+    parser.add_argument("--aug_key", type=str, required=False, default="aug4",
+                        help="Augmentation key for get_training_augmentation")
     args = parser.parse_args()
 
     main(args)
