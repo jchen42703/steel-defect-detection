@@ -8,10 +8,12 @@ import pandas as pd
 
 from functools import partial
 from torch.jit import load
-from steel.inference.utils import mask2rle, post_process, load_weights_infer, tta_flips_fn, apply_nonlin
+from steel.inference.utils import mask2rle, post_process, load_weights_infer, \
+                                  tta_flips_fn, apply_nonlin
 
 class Inference(object):
-    def __init__(self, checkpoint_path, test_loader, test_dataset, model=None, mode="segmentation", tta_flips=None):
+    def __init__(self, checkpoint_path, test_loader, test_dataset, model=None,
+                 mode="segmentation", tta_flips=None, sharpen_t=0.5):
         """
         Attributes:
             checkpoint_path (str): Path to a checkpoint
@@ -20,6 +22,7 @@ class Inference(object):
             mode (str): either "segmentation" or "classification". Defaults to "segmentation"
             tta_flips (list-like): consisting one of or all of ["lr_flip", "ud_flip", "lrud_flip"].
                 Defaults to None.
+            sharpen_t (float): Parameter to sharpen with
         """
         try:
             self.model = load(checkpoint_path).cuda()
@@ -33,12 +36,16 @@ class Inference(object):
         self.mode = mode
         self.loader = test_loader
         self.dataset = test_dataset
-        self.seg_class_params = {0: (0.5, 600), 1: (0.5, 600), 2: (0.5, 1000), 3: (0.5, 2000)} # (threshold, min_size)
+        self.seg_class_params = {0: (0.5, 600), 1: (0.5, 600), 2: (0.5, 1000),
+                                 3: (0.5, 2000)} # (threshold, min_size)
         self.tta_fn = None
         if tta_flips is not None:
-            assert isinstance(tta_flips, (list, tuple)), "tta_flips must be a list-like of strings."
+            assert isinstance(tta_flips, (list, tuple)), \
+                "tta_flips must be a list-like of strings."
             print(f"TTA Ops: {tta_flips}")
-            self.tta_fn = partial(tta_flips_fn, model=self.model, mode=mode, flips=tta_flips, non_lin="sigmoid")
+            self.tta_fn = partial(tta_flips_fn, model=self.model, mode=mode,
+                                  flips=tta_flips, non_lin="sigmoid",
+                                  sharpen_t=sharpen_t)
 
     def create_sub(self, sub):
         """
