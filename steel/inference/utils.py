@@ -91,6 +91,12 @@ def lr_flip(x):
     """
     return flip(x, 3)
 
+def lrud_flip(x):
+    """
+    Assumes the x has the shape: [batch, n_channels, h, w]
+    """
+    return ud_flip(lr_flip(x))
+
 def sharpen(p,t=0.5):
         if t!=0:
             return p**t
@@ -120,7 +126,32 @@ def apply_nonlin(logit, non_lin="sigmoid", sharpen_t=0.5):
         x = torch.softmax(logit, dim=1)
         return x
 
-def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip", "lrud_flip"], non_lin="sigmoid"):
+def tta_one(model, batch, mode, results_arr, num_results, post_process_fn, tta_fn, **tta_kwargs):
+    """
+    Args:
+        model (nn.Module): model should be in evaluation mode
+        batch (torch.Tensor): shape (batch_size, n_channels, h, w)
+        mode (str): Either 'segmentation' or 'classification'
+        results_arr (np.ndarray): contains the averaged tta results
+            shape: (batch_size, n_channels, h, w)
+        num_results (int): Number of tta ops + 1
+        post_process_fn (function): takes in a torch.Tensor as input and
+            processes the output, besides tta.
+        tta_fn (function): The actual tta function; must have a torch.Tensor
+            as the input and returns a torch.Tensor
+        **tta_kwargs: For specifying specifc parameters for `tta_fn`
+    Returns:
+        returns results_arr with the new averaged in tta result
+    """
+    pred = model(tta_fn(batch, **tta_kwargs).cuda())
+    if mode == "segmentation":
+        results_arr += 1/num_results * post_process_fn(tta_fn(pred, **tta_kwargs))
+    elif mode == "classification":
+        results_arr += 1/num_results * post_process_fn(pred).squeeze()
+    return results_arr
+
+def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip",],
+                 non_lin="sigmoid", sharpen_t=0.5):
     """
     Inspired by: https://github.com/MIC-DKFZ/nnUNet/blob/2228cbe9e77910aaf97040790af83b8984ab9c11/nnunet/network_architecture/neural_network.py
     Applies flip TTA with cuda.
@@ -128,12 +159,16 @@ def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip",
     Args:
         model (nn.Module): model should be in evaluation mode.
         batch (torch.Tensor): shape (batch_size, n_channels, h, w)
+        mode (str): Either 'segmentation' or 'classification'
         flips (list-like): consisting one of or all of ["lr_flip", "ud_flip", "lrud_flip"].
             Defaults to ["lr_flip", "ud_flip", "lrud_flip"].
+        non_lin (str): Either sigmoid or softmax
+        sharpen_t (float): Parameter to sharpen with
     Returns:
         averaged probability predictions
     """
     process = partial(apply_nonlin, non_lin=non_lin)
+    process_tta = partial(process, sharpen_t=sharpen_t)
     with torch.no_grad():
         batch_size = batch.shape[0]
         spatial_dims = list(batch.shape[2:]) if mode=="segmentation" else []
@@ -142,17 +177,10 @@ def tta_flips_fn(model, batch, mode="segmentation", flips=["lr_flip", "ud_flip",
         num_results = 1 + len(flips)
         pred = process(model(batch.cuda()), sharpen_t=0).squeeze()
         results += 1/num_results * pred
-
-        if "lr_flip" in flips:
-            pred_lr = model(lr_flip(batch).cuda())
-            if mode == "segmentation": results += 1/num_results * process(lr_flip(pred_lr))
-            elif mode == "classification": results += 1/num_results * process(pred_lr).squeeze()
-        elif "ud_flip" in flips:
-            pred_ud = model(ud_flip(batch).cuda())
-            if mode == "segmentation": results += 1/num_results * process(ud_flip(pred_ud))
-            elif mode == "classification": results += 1/num_results * process(pred_ud).squeeze()
-        elif "lrud_flip" in flips:
-            pred_lrud = model(ud_flip(lr_flip(batch)).cuda())
-            if mode == "segmentation": results += 1/num_results * process(ud_flip(lr_flip(pred_lrud)))
-            elif mode == "classification": results += 1/num_results * process(pred_lrud).squeeze()
+        # applying tta
+        tta_fn_list = [globals()[fn] for fn in flips]
+        for tta_fn in tta_fn_list:
+            results = tta_one(model, batch, mode, results, num_results,
+                              post_process_fn=process_tta,
+                              tta_fn=tta_fn)
     return results
