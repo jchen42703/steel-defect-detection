@@ -67,7 +67,9 @@ def main(args):
     elif args.tta == ["None"]:
         # handles case where --tta "None"
         args.tta = []
-    infer = Inference(args.checkpoint_path, test_loader, test_dataset, model=model, mode=args.mode, tta_flips=args.tta)
+    infer = Inference(args.checkpoint_path, test_loader, test_dataset,
+                      model=model, mode=args.mode, tta_flips=args.tta,
+                      sharpen_t=args.sharpen_t)
     out_df = infer.create_sub(sub=sub)
 
 if __name__ == "__main__":
@@ -93,5 +95,7 @@ if __name__ == "__main__":
                         default="lr_flip",
                         help="Test time augmentation (lr_flip, ud_flip, and/or \
                         lrud_flip). Make sure to divide the flips with spaces.")
+    parser.add_argument("--sharpen_t", type=float, required=False, default=0.5,
+                        help="Temperature sharpening value")
     args = parser.parse_args()
     main(args)
