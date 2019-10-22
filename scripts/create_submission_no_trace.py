@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 
 from steel.io.dataset import SteelDataset, ClassificationSteelDataset
 from steel.inference.inference_class import Inference
-from steel.inference.ensemble import EnsembleModel
 from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
 from parsing_utils import clean_args_create_submission_no_trace, load_classification_models
 
@@ -58,7 +57,7 @@ def main(args):
 
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
-    infer = Inference(args.checkpoint_path, test_loader, test_dataset,
+    infer = Inference(args.checkpoint_paths, test_loader, test_dataset,
                       models=models, mode=args.mode, tta_flips=args.tta,
                       sharpen_t=args.sharpen_t)
     out_df = infer.create_sub(sub=sub)
