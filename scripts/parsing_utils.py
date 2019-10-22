@@ -1,3 +1,5 @@
+import torch
+
 from steel.models.classification_model import ResNet34
 from steel.models.heng_classification_model import Resnet34_classification
 
@@ -39,6 +41,7 @@ def load_a_classification_model(model_name, dropout_p=0.5):
         model = ResNet34(pre=None, num_classes=4, use_simple_head=True, dropout_p=dropout_p)
     elif model_name.lower() == "heng":
         model = Resnet34_classification(num_class=4)
+    assert isinstance(model, torch.nn.Module)
     return model
 
 def load_classification_models(args):
@@ -46,7 +49,7 @@ def load_classification_models(args):
     Reads the list of model names [`regular` or `heng`] and loads a list of
     them.
     """
-    if isinstance(args.classification_models, list)
+    if isinstance(args.classification_models, list):
         return [load_a_classification_model(model_name, args.dropout_p)
                 for model_name in args.classification_models]
     elif isinstance(args.classification_models, str):
