@@ -10,11 +10,11 @@ import pickle
 
 from torch.utils.data import DataLoader
 
-from steel.models.classification_model import ResNet34
-from steel.models.heng_classification_model import Resnet34_classification
 from steel.io.dataset import SteelDataset, ClassificationSteelDataset
-from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
 from steel.inference.inference_class import Inference
+from steel.inference.ensemble import EnsembleModel
+from utils import get_validation_augmentation, get_preprocessing, setup_train_and_sub_df
+from parsing_utils import clean_args_create_submission_no_trace, load_classification_models
 
 def main(args):
     """
@@ -28,7 +28,7 @@ def main(args):
     """
     torch.cuda.empty_cache()
     gc.collect()
-
+    args = clean_args_create_submission_no_trace(args)
     # setting up the test I/O
     preprocessing_fn = smp.encoders.get_preprocessing_fn(args.encoder, "imagenet")
     # setting up the train/val split with filenames
@@ -41,7 +41,7 @@ def main(args):
                                     transforms=get_validation_augmentation(),
                                     preprocessing=get_preprocessing(preprocessing_fn)
                                     )
-        model = smp.Unet(
+        models = smp.Unet(
                         encoder_name=args.encoder,
                         encoder_weights=None,
                         classes=4,
@@ -54,21 +54,12 @@ def main(args):
                                                   transforms=get_validation_augmentation(),
                                                   preprocessing=get_preprocessing(preprocessing_fn)
                                                  )
-        if args.classification_model.lower() == "regular":
-            model = ResNet34(pre=None, num_classes=4, use_simple_head=True, dropout_p=args.dropout_p)
-        elif args.classification_model.lower() == "heng":
-            model = Resnet34_classification(num_class=4)
+        models = load_classification_models(args)
+
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
-    if isinstance(args.tta, str):
-        # handles both the "None" case and the single TTA op case
-        # --tta="None" or --tta="..."
-        args.tta = [] if args.tta == "None" else [args.tta]
-    elif args.tta == ["None"]:
-        # handles case where --tta "None"
-        args.tta = []
     infer = Inference(args.checkpoint_path, test_loader, test_dataset,
-                      model=model, mode=args.mode, tta_flips=args.tta,
+                      models=models, mode=args.mode, tta_flips=args.tta,
                       sharpen_t=args.sharpen_t)
     out_df = infer.create_sub(sub=sub)
 
@@ -80,15 +71,16 @@ if __name__ == "__main__":
                         help="Path to the unzipped kaggle dataset directory.")
     parser.add_argument("--mode", type=str, required=True,
                         help="Either 'segmentation' or 'classification'")
-    parser.add_argument("--classification_model", type=str, required=False, default="regular",
-                        help="Either 'regular' or 'heng'")
+    parser.add_argument("--classification_models", nargs="+", type=str, required=False,
+                        default="regular", help="Either 'regular' or 'heng'")
     parser.add_argument("--batch_size", type=int, required=False, default=8,
                         help="Batch size")
     parser.add_argument("--encoder", type=str, required=False, default="resnet50",
                         help="one of the encoders in https://github.com/qubvel/segmentation_models.pytorch")
-    parser.add_argument("--checkpoint_path", type=str, required=False,
+    parser.add_argument("--checkpoint_paths", nargs="+", type=str, required=False,
                         default="./logs/segmentation/checkpoints/best.pth",
-                        help="Path to checkpoint that was created during training")
+                        help="Path to checkpoint that was created during training \
+                        Should be corresponding to `classification_models`")
     parser.add_argument("--dropout_p", type=float, required=False, default=0.5,
                         help="Dropout probability before the final classification head.")
     parser.add_argument("--tta", nargs="+", type=str, required=False,
