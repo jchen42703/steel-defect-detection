@@ -12,12 +12,12 @@ def clean_args_create_submission_no_trace(args):
     # making it so that single element lists are considered as a single
     # model (so there won't be redundant averaging from ensembling)
     args.classification_models = args.classification_models[0] \
-                                    if args.classification_models==1 \
+                                    if len(args.classification_models)==1 \
                                     else args.classification_models
     # cleaning up --checkpoint_paths
     # to be consistent with the args.classification_models' reason
     args.checkpoint_paths = args.checkpoint_paths[0] \
-                                    if args.checkpoint_paths==1 \
+                                    if len(args.checkpoint_paths)==1 \
                                     else args.checkpoint_paths
     if isinstance(args.checkpoint_paths, list) and isinstance(args.classification_models, list):
         assert len(args.checkpoint_paths) == len(args.classification_models), \
